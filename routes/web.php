@@ -5,7 +5,15 @@ use App\Http\Controllers\Admin;
 use App\Http\Controllers\Penghuni;
 
 // ─── Guest ───────────────────────────────────────────────
-Route::get('/', fn() => redirect()->route('login'));
+Route::get('/', function(){
+    if (auth()->check()) {
+        if (auth()->user()->role === 'admin') {
+            return redirect()->route('admin.dashboard');
+        }
+        return redirect()->route('penghuni.dashboard');
+    }
+    return redirect()->route('login');
+});
 
 // Auth routes (Breeze)
 require __DIR__.'/auth.php';

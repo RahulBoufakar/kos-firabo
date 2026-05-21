@@ -1,0 +1,597 @@
+// ── Bootstrap ──────────────────────────────────────────
+@import 'bootstrap/scss/bootstrap';
+
+// ── Design Tokens ──────────────────────────────────────
+:root {
+    --firabo-sidebar-bg:      #1A4731;
+    --firabo-sidebar-hover:   #245c3f;
+    --firabo-sidebar-active:  #2d7a56;
+    --firabo-sidebar-text:    rgba(255, 255, 255, 0.85);
+    --firabo-sidebar-width:   240px;
+
+    --firabo-primary:         #2d7a56;
+    --firabo-primary-dark:    #1A4731;
+    --firabo-primary-light:   #e8f5ee;
+
+    --firabo-bg:              #eef7f2;
+    --firabo-card-bg:         #ffffff;
+    --firabo-border:          #d4e9dc;
+
+    --firabo-success:         #2d7a56;
+    --firabo-danger:          #dc3545;
+    --firabo-warning:         #f59e0b;
+    --firabo-info:            #0ea5e9;
+}
+
+// ── Bootstrap Overrides ────────────────────────────────
+$primary:   #2d7a56;
+$success:   #2d7a56;
+$danger:    #dc3545;
+
+// ── Base ───────────────────────────────────────────────
+body {
+    background-color: var(--firabo-bg);
+    font-family: 'Inter', system-ui, sans-serif;
+    color: #1a1a1a;
+}
+
+// ── Sidebar ────────────────────────────────────────────
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: var(--firabo-sidebar-width);
+    background-color: var(--firabo-sidebar-bg);
+    display: flex;
+    flex-direction: column;
+    z-index: 1000;
+    overflow-y: auto;
+
+    .sidebar-brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 1.25rem 1.25rem 1rem;
+        text-decoration: none;
+
+        .brand-icon {
+            width: 36px;
+            height: 36px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .brand-text {
+            .brand-name {
+                color: #fff;
+                font-weight: 700;
+                font-size: 15px;
+                line-height: 1.2;
+            }
+            .brand-sub {
+                color: rgba(255,255,255,0.5);
+                font-size: 11px;
+            }
+        }
+    }
+
+    .sidebar-divider {
+        height: 1px;
+        background: rgba(255,255,255,0.1);
+        margin: 0 1rem 0.75rem;
+    }
+
+    .sidebar-nav {
+        flex: 1;
+        padding: 0 0.75rem;
+        list-style: none;
+        margin: 0;
+
+        .nav-item {
+            margin-bottom: 2px;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 0.6rem 0.875rem;
+            color: var(--firabo-sidebar-text);
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 400;
+            transition: background 0.15s, color 0.15s;
+
+            i { font-size: 18px; flex-shrink: 0; }
+
+            &:hover {
+                background: var(--firabo-sidebar-hover);
+                color: #fff;
+            }
+
+            &.active {
+                background: var(--firabo-sidebar-active);
+                color: #fff;
+                font-weight: 500;
+            }
+        }
+    }
+
+    .sidebar-bottom {
+        padding: 0.75rem;
+        border-top: 1px solid rgba(255,255,255,0.1);
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 0.6rem 0.875rem;
+            color: var(--firabo-sidebar-text);
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: background 0.15s;
+
+            i { font-size: 18px; }
+
+            &:hover { background: var(--firabo-sidebar-hover); color: #fff; }
+        }
+
+        .btn-logout {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            padding: 0.6rem 0.875rem;
+            background: #dc3545;
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.15s;
+            margin-top: 4px;
+
+            i { font-size: 18px; }
+
+            &:hover { background: #b91c2c; }
+        }
+    }
+}
+
+// ── Main Content ───────────────────────────────────────
+.main-wrapper {
+    margin-left: var(--firabo-sidebar-width);
+    min-height: 100vh;
+
+    .topbar {
+        display: none; // desktop — tidak perlu topbar
+    }
+
+    .main-content {
+        padding: 2rem;
+    }
+}
+
+// ── Page Header ────────────────────────────────────────
+.page-header {
+    margin-bottom: 1.5rem;
+
+    .page-title {
+        font-size: 1.625rem;
+        font-weight: 700;
+        color: #111;
+        margin: 0;
+    }
+
+    .page-subtitle {
+        color: #6b7280;
+        font-size: 14px;
+        margin: 2px 0 0;
+    }
+}
+
+// ── Stat Cards ─────────────────────────────────────────
+.stat-card {
+    background: var(--firabo-primary-dark);
+    border-radius: 12px;
+    padding: 1.25rem;
+    color: #fff;
+    border: none;
+
+    &.stat-card-light {
+        background: var(--firabo-card-bg);
+        color: #111;
+        border: 1px solid var(--firabo-border);
+
+        .stat-value { color: var(--firabo-primary); }
+        .stat-label { color: #6b7280; }
+    }
+
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        line-height: 1;
+        color: #fff;
+    }
+
+    .stat-label {
+        font-size: 13px;
+        color: rgba(255,255,255,0.7);
+        margin-top: 6px;
+    }
+}
+
+// ── Cards ──────────────────────────────────────────────
+.firabo-card {
+    background: var(--firabo-card-bg);
+    border: 1px solid var(--firabo-border);
+    border-radius: 12px;
+    padding: 1.25rem;
+
+    .card-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #111;
+        margin-bottom: 1rem;
+    }
+}
+
+// ── Tables ─────────────────────────────────────────────
+.firabo-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+
+    thead tr {
+        background: var(--firabo-primary-light);
+        th {
+            padding: 0.75rem 1rem;
+            font-weight: 600;
+            color: #374151;
+            border: none;
+            font-size: 13px;
+        }
+    }
+
+    tbody tr {
+        border-bottom: 1px solid var(--firabo-border);
+        transition: background 0.1s;
+
+        &:hover { background: #f9fafb; }
+        &:last-child { border-bottom: none; }
+
+        td {
+            padding: 0.875rem 1rem;
+            color: #374151;
+            vertical-align: middle;
+        }
+    }
+}
+
+// ── Badges ─────────────────────────────────────────────
+.badge-tersedia  { background: #dcfce7; color: #166534; border-radius: 20px; padding: 4px 12px; font-size: 12px; font-weight: 500; }
+.badge-terisi    { background: #fce7f3; color: #9d174d; border-radius: 20px; padding: 4px 12px; font-size: 12px; font-weight: 500; }
+.badge-nonaktif  { background: #f3f4f6; color: #4b5563; border-radius: 20px; padding: 4px 12px; font-size: 12px; font-weight: 500; }
+.badge-lunas     { background: #dcfce7; color: #166534; border-radius: 20px; padding: 4px 12px; font-size: 12px; font-weight: 500; }
+.badge-belum     { background: #fef3c7; color: #92400e; border-radius: 20px; padding: 4px 12px; font-size: 12px; font-weight: 500; }
+.badge-terlambat { background: #fee2e2; color: #991b1b; border-radius: 20px; padding: 4px 12px; font-size: 12px; font-weight: 500; }
+.badge-pending   { background: #fee2e2; color: #991b1b; border-radius: 20px; padding: 4px 12px; font-size: 12px; font-weight: 500; }
+.badge-sukses    { background: #dcfce7; color: #166534; border-radius: 20px; padding: 4px 12px; font-size: 12px; font-weight: 500; }
+
+// ── Buttons ────────────────────────────────────────────
+.btn-firabo {
+    background: var(--firabo-primary);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 0.5rem 1.125rem;
+    font-size: 14px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: background 0.15s;
+    text-decoration: none;
+
+    &:hover { background: var(--firabo-primary-dark); color: #fff; }
+}
+
+.btn-firabo-outline {
+    background: transparent;
+    color: var(--firabo-primary);
+    border: 1.5px solid var(--firabo-primary);
+    border-radius: 8px;
+    padding: 0.5rem 1.125rem;
+    font-size: 14px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-decoration: none;
+
+    &:hover { background: var(--firabo-primary); color: #fff; }
+}
+
+// ── Form Controls ──────────────────────────────────────
+.firabo-input {
+    width: 100%;
+    padding: 0.55rem 0.875rem;
+    border: 1.5px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #111;
+    background: #fff;
+    transition: border-color 0.15s;
+
+    &:focus {
+        outline: none;
+        border-color: var(--firabo-primary);
+        box-shadow: 0 0 0 3px rgba(45,122,86,0.12);
+    }
+
+    &::placeholder { color: #9ca3af; }
+}
+
+.input-icon-wrap {
+    position: relative;
+
+    i {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #9ca3af;
+        font-size: 16px;
+    }
+
+    .firabo-input { padding-left: 2.25rem; }
+}
+
+// ── Search Bar ─────────────────────────────────────────
+.search-bar {
+    position: relative;
+    max-width: 320px;
+
+    i {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #9ca3af;
+        font-size: 16px;
+    }
+
+    input {
+        padding-left: 2.5rem;
+        border-radius: 8px;
+        border: 1.5px solid #d1d5db;
+        font-size: 14px;
+        height: 38px;
+        width: 100%;
+
+        &:focus {
+            border-color: var(--firabo-primary);
+            box-shadow: 0 0 0 3px rgba(45,122,86,0.12);
+            outline: none;
+        }
+    }
+}
+
+// ── Skeleton Loading ───────────────────────────────────
+@keyframes skeleton-pulse {
+    0%   { opacity: 1; }
+    50%  { opacity: 0.4; }
+    100% { opacity: 1; }
+}
+
+.skeleton {
+    background: #e5e7eb;
+    border-radius: 6px;
+    animation: skeleton-pulse 1.5s ease-in-out infinite;
+
+    &.skeleton-text  { height: 14px; }
+    &.skeleton-title { height: 18px; }
+    &.skeleton-badge { height: 24px; width: 72px; border-radius: 20px; }
+}
+
+.skeleton-row td {
+    padding: 0.875rem 1rem;
+}
+
+// ── Guest Layout ───────────────────────────────────────
+.guest-wrapper {
+    min-height: 100vh;
+    background: var(--firabo-primary-light);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+}
+
+.guest-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 2rem 2.25rem;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.07);
+    border-top: 4px solid var(--firabo-primary);
+
+    .guest-logo {
+        width: 64px;
+        height: 64px;
+        background: var(--firabo-primary-light);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1rem;
+        color: var(--firabo-primary);
+        font-size: 28px;
+    }
+
+    .guest-title {
+        font-size: 1.375rem;
+        font-weight: 700;
+        text-align: center;
+        color: #111;
+    }
+
+    .guest-subtitle {
+        text-align: center;
+        color: #6b7280;
+        font-size: 14px;
+        margin-bottom: 1.5rem;
+    }
+}
+
+// ── Penghuni Tagihan Card ──────────────────────────────
+.tagihan-hero {
+    background: var(--firabo-primary-dark);
+    border-radius: 14px;
+    padding: 1.5rem;
+    color: #fff;
+
+    .tagihan-nominal {
+        font-size: 2rem;
+        font-weight: 700;
+        margin: 0.5rem 0;
+    }
+
+    .tagihan-countdown {
+        font-size: 13px;
+        color: rgba(255,255,255,0.7);
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+}
+
+// ── Pagination ─────────────────────────────────────────
+.firabo-pagination {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    justify-content: flex-end;
+
+    .page-btn {
+        width: 32px;
+        height: 32px;
+        border-radius: 6px;
+        border: 1px solid var(--firabo-border);
+        background: #fff;
+        font-size: 13px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #374151;
+        transition: all 0.15s;
+
+        &.active {
+            background: var(--firabo-primary);
+            color: #fff;
+            border-color: var(--firabo-primary);
+        }
+
+        &:hover:not(.active) { background: var(--firabo-primary-light); }
+        &:disabled { opacity: 0.4; cursor: not-allowed; }
+    }
+}
+
+// ── Mobile ─────────────────────────────────────────────
+@media (max-width: 768px) {
+    .sidebar {
+        display: none;  // sidebar desktop hidden di mobile
+    }
+
+    .main-wrapper {
+        margin-left: 0;
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--firabo-primary-dark);
+            padding: 0.75rem 1rem;
+            color: #fff;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+
+            .topbar-brand {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                font-weight: 700;
+                font-size: 16px;
+                color: #fff;
+                text-decoration: none;
+
+                i { font-size: 20px; }
+            }
+
+            .topbar-user {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                font-size: 13px;
+                color: rgba(255,255,255,0.85);
+            }
+        }
+
+        .main-content {
+            padding: 1.25rem 1rem 6rem; // bottom padding for bottom nav
+        }
+    }
+
+    .bottom-nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: #fff;
+        border-top: 1px solid #e5e7eb;
+        display: flex;
+        z-index: 1000;
+        padding-bottom: env(safe-area-inset-bottom);
+
+        .bottom-nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px 4px;
+            text-decoration: none;
+            color: #9ca3af;
+            font-size: 10px;
+            gap: 2px;
+            transition: color 0.15s;
+
+            i { font-size: 20px; }
+
+            &.active {
+                color: var(--firabo-primary);
+                font-weight: 500;
+            }
+        }
+    }
+}
+
+@media (min-width: 769px) {
+    .bottom-nav { display: none; }
+}

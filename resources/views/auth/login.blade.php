@@ -1,47 +1,67 @@
-<x-guest-layout>
-    <!-- Session Status -->
-    <x-auth-session-status class="mb-4" :status="session('status')" />
+@extends('layouts.guest')
+
+@section('title', 'Login')
+
+@section('content')
+<div class="guest-card">
+    <div class="guest-logo">
+        <i class="bi bi-house-fill"></i>
+    </div>
+    <h1 class="guest-title">Kos Firabo</h1>
+    <p class="guest-subtitle">Manajemen Properti Pintar</p>
 
     <form method="POST" action="{{ route('login') }}">
         @csrf
 
-        <!-- Email Address -->
-        <div>
-            <x-input-label for="email" :value="__('Email')" />
-            <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autofocus autocomplete="username" />
-            <x-input-error :messages="$errors->get('email')" class="mt-2" />
+        <div class="mb-3">
+            <label class="form-label" style="font-size:14px; font-weight:500">Email</label>
+            <div class="input-icon-wrap">
+                <i class="bi bi-envelope"></i>
+                <input type="email" name="email" value="{{ old('email') }}"
+                       class="firabo-input" placeholder="admin@kosfirabo.com" required autofocus>
+            </div>
+            @error('email')
+                <div class="text-danger mt-1" style="font-size:12px">{{ $message }}</div>
+            @enderror
         </div>
 
-        <!-- Password -->
-        <div class="mt-4">
-            <x-input-label for="password" :value="__('Password')" />
-
-            <x-text-input id="password" class="block mt-1 w-full"
-                            type="password"
-                            name="password"
-                            required autocomplete="current-password" />
-
-            <x-input-error :messages="$errors->get('password')" class="mt-2" />
+        <div class="mb-2">
+            <label class="form-label" style="font-size:14px; font-weight:500">Password</label>
+            <div class="input-icon-wrap">
+                <i class="bi bi-lock"></i>
+                <input type="password" name="password"
+                       class="firabo-input" placeholder="••••••••" required>
+            </div>
+            @error('password')
+                <div class="text-danger mt-1" style="font-size:12px">{{ $message }}</div>
+            @enderror
         </div>
 
-        <!-- Remember Me -->
-        <div class="block mt-4">
-            <label for="remember_me" class="inline-flex items-center">
-                <input id="remember_me" type="checkbox" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500" name="remember">
-                <span class="ms-2 text-sm text-gray-600">{{ __('Remember me') }}</span>
-            </label>
-        </div>
-
-        <div class="flex items-center justify-end mt-4">
-            @if (Route::has('password.request'))
-                <a class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" href="{{ route('password.request') }}">
-                    {{ __('Forgot your password?') }}
+        <div class="text-end mb-3">
+            @if(Route::has('password.request'))
+                <a href="{{ route('password.request') }}"
+                   style="font-size:13px; color:var(--firabo-primary); text-decoration:none">
+                    Lupa password?
                 </a>
             @endif
-
-            <x-primary-button class="ms-3">
-                {{ __('Log in') }}
-            </x-primary-button>
         </div>
+
+        <button type="submit" class="btn-firabo w-100 justify-content-center py-2">
+            Login <i class="bi bi-arrow-right"></i>
+        </button>
+
+        <hr class="my-3">
+        <p class="text-center mb-0" style="font-size:13px; color:#6b7280">
+            Belum punya akun?
+            <a href="{{ route('register') }}"
+               style="color:var(--firabo-primary); font-weight:500; text-decoration:none">
+                Daftar di sini
+            </a>
+        </p>
     </form>
-</x-guest-layout>
+
+    <p class="text-center mt-3 mb-0" style="font-size:12px; color:#9ca3af">
+        <i class="bi bi-shield-check me-1"></i>Sistem Manajemen Aman & Terenkripsi
+    </p>
+</div>
+@endsection
