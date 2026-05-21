@@ -1,5 +1,6 @@
 // ── Bootstrap ──────────────────────────────────────────
 @import 'bootstrap/scss/bootstrap';
+[x-cloak] { display: none !important; }
 
 // ── Design Tokens ──────────────────────────────────────
 :root {
@@ -513,6 +514,23 @@ body {
     }
 }
 
+.table-card-wrapper {
+    container-type: inline-size;
+    container-name: tableWrapper;
+}
+
+// Di bawah 650px konten → card view
+@container tableWrapper (max-width: 650px) {
+    .table-view { display: none; }
+    .card-view  { display: block; }
+}
+
+// Di atas 650px konten → table view
+@container tableWrapper (min-width: 651px) {
+    .table-view { display: block; }
+    .card-view  { display: none; }
+}
+
 // ── Mobile ─────────────────────────────────────────────
 @media (max-width: 768px) {
     .sidebar {
@@ -587,6 +605,57 @@ body {
             &.active {
                 color: var(--firabo-primary);
                 font-weight: 500;
+            }
+        }
+    }
+    .item-card {
+        background: #fff;
+        border: 1px solid var(--firabo-border);
+        border-radius: 12px;
+        padding: 1rem 1.125rem;
+        margin-bottom: 10px;
+
+        .item-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.625rem;
+
+            .item-card-title {
+                font-weight: 600;
+                font-size: 15px;
+                color: var(--firabo-primary);
+            }
+
+            .item-card-actions {
+                display: flex;
+                gap: 6px;
+            }
+        }
+
+        .item-card-body {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px 12px;
+        }
+
+        .item-card-field {
+            .field-label {
+                font-size: 11px;
+                color: #9ca3af;
+                text-transform: uppercase;
+                letter-spacing: 0.04em;
+                margin-bottom: 2px;
+            }
+
+            .field-value {
+                font-size: 13px;
+                color: #374151;
+                font-weight: 500;
+            }
+
+            &.full-width {
+                grid-column: 1 / -1;
             }
         }
     }

@@ -1,13 +1,14 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin;
 use App\Http\Controllers\Penghuni;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Route;
 
 // ─── Guest ───────────────────────────────────────────────
 Route::get('/', function(){
-    if (auth()->check()) {
-        if (auth()->user()->role === 'admin') {
+    if (Auth::check()) {
+        if (Auth::user()->role === 'admin') {
             return redirect()->route('admin.dashboard');
         }
         return redirect()->route('penghuni.dashboard');

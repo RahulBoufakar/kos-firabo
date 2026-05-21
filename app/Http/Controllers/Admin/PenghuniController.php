@@ -12,7 +12,7 @@ class PenghuniController extends Controller
      */
     public function index()
     {
-        //
+        return view('admin.penghuni.index');
     }
 
     /**

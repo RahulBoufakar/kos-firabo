@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
+use App\Models\Kamar;
 
 class KamarController extends Controller
 {
@@ -12,7 +14,8 @@ class KamarController extends Controller
      */
     public function index()
     {
-        //
+        Gate::authorize('viewAny', Kamar::class);
+        return view('admin.kamar.index');
     }
 
     /**
