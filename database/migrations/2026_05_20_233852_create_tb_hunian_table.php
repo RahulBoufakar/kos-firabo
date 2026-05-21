@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('tb_hunian', function (Blueprint $table) {
             $table->id('hunian_id');
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
-            $table->foreignId('kamar_id')->constrained('tb_kamar')->cascadeOnDelete();
+            $table->foreignId('kamar_id')->constrained('tb_kamar', 'kamar_id')->cascadeOnDelete();
             $table->date('tanggal_masuk');
             $table->date('tanggal_keluar')->nullable();
             $table->enum('status_hunian', ['aktif', 'selesai'])->default('aktif');

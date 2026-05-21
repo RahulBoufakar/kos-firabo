@@ -12,7 +12,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('tb_kamar', function (Blueprint $table) {
-            $table->id();
+            $table->id('kamar_id');
+            $table->string('nomor_kamar', 10)->unique();
+            $table->string('tipe_kamar', 50);
+            $table->decimal('harga_sewa', 10, 2);
+            $table->text('fasilitas')->nullable();
+            $table->enum('status_kamar', ['tersedia', 'terisi', 'nonaktif'])->default('tersedia');
             $table->timestamps();
         });
     }
