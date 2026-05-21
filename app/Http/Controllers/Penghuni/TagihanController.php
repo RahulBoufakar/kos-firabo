@@ -7,5 +7,8 @@ use Illuminate\Http\Request;
 
 class TagihanController extends Controller
 {
-    //
+    public function index()
+    {
+        return view('penghuni.tagihan.index');
+    }
 }
