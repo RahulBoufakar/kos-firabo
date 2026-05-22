@@ -57,39 +57,6 @@
                         <div class="text-danger mt-1" style="font-size:12px">{{ $message }}</div>
                     @enderror
                 </div>
-                <div class="col-md-6">
-                    <label class="form-label" style="font-size:14px; font-weight:500">Tanggal Masuk</label>
-                    <input type="date" wire:model.live="tanggal_masuk" class="firabo-input">
-                    @error('tanggal_masuk')
-                        <div class="text-danger mt-1" style="font-size:12px">{{ $message }}</div>
-                    @enderror
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label" style="font-size:14px; font-weight:500">
-                        Tanggal Generate (1–28)
-                    </label>
-                    <input type="number" wire:model.live="tanggal_generate"
-                           class="firabo-input" min="1" max="28">
-                    <small class="text-muted" style="font-size:11px">
-                        Tanggal dalam bulan tagihan di-generate
-                    </small>
-                    @error('tanggal_generate')
-                        <div class="text-danger mt-1" style="font-size:12px">{{ $message }}</div>
-                    @enderror
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label" style="font-size:14px; font-weight:500">
-                        Jatuh Tempo (hari)
-                    </label>
-                    <input type="number" wire:model.live="tanggal_jatuh_tempo"
-                           class="firabo-input" min="1" max="30">
-                    <small class="text-muted" style="font-size:11px">
-                        Jarak hari dari tanggal generate
-                    </small>
-                    @error('tanggal_jatuh_tempo')
-                        <div class="text-danger mt-1" style="font-size:12px">{{ $message }}</div>
-                    @enderror
-                </div>
             </div>
         </div>
         <div class="modal-box-footer">

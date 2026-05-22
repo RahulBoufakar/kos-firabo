@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Hunian extends Model
 {
@@ -28,10 +29,17 @@ class Hunian extends Model
         return $this->belongsTo(Kamar::class, 'kamar_id', 'kamar_id');
     }
 
-    public function jadwalTagihan()
+    /**
+     * Jadwal tagihan (One-to-One per hunian, dibuat saat registrasi).
+     */
+    public function jadwalTagihan(): HasOne
     {
         return $this->hasOne(JadwalTagihan::class, 'hunian_id', 'hunian_id');
     }
+ 
+    /**
+     * Semua tagihan yang dihasilkan dari hunian ini.
+     */
 
     public function tagihan()
     {

@@ -7,6 +7,6 @@
     <p class="page-subtitle">Atur tanggal generate dan jatuh tempo tagihan per hunian.</p>
 </div>
 
-@livewire('admin.jadwal-tagihan-table')
+@livewire('admin.jadwal.table')
 
 @endsection

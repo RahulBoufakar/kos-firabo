@@ -25,9 +25,6 @@ new class extends Component {
     public string $no_wa = '';
     public string $password = '';
     public string $kamar_id = '';
-    public string $tanggal_masuk = '';
-    public string $tanggal_generate = '1';
-    public string $tanggal_jatuh_tempo = '7';
 
     protected function rules(): array
     {
@@ -38,9 +35,6 @@ new class extends Component {
             'no_wa'               => 'required|string|max:20',
             'password'            => $this->isEditing ? 'nullable|min:6' : 'required|min:6',
             'kamar_id'            => 'required|exists:tb_kamar,kamar_id',
-            'tanggal_masuk'       => 'required|date',
-            'tanggal_generate'    => 'required|integer|min:1|max:28',
-            'tanggal_jatuh_tempo' => 'required|integer|min:1|max:30',
         ];
     }
 
@@ -49,16 +43,14 @@ new class extends Component {
     public function openCreate(): void
     {
         $this->reset(['name', 'email', 'no_wa', 'password',
-                      'kamar_id', 'tanggal_masuk', 'editingId']);
-        $this->tanggal_generate    = '1';
-        $this->tanggal_jatuh_tempo = '7';
+                      'kamar_id', 'editingId']);
         $this->isEditing = false;
         $this->showModal = true;
     }
 
     public function openEdit(int $id): void
     {
-        $this->reset(['name', 'email', 'no_wa', 'password', 'kamar_id', 'tanggal_masuk']);
+        $this->reset(['name', 'email', 'no_wa', 'password', 'kamar_id']);
 
         $user   = User::findOrFail($id);
         $hunian = $user->hunian()->where('status_hunian', 'aktif')
@@ -70,9 +62,6 @@ new class extends Component {
         $this->no_wa               = $user->no_wa ?? '';
         $this->password            = '';
         $this->kamar_id            = (string) ($hunian?->kamar_id ?? '');
-        $this->tanggal_masuk       = $hunian?->tanggal_masuk?->format('Y-m-d') ?? '';
-        $this->tanggal_generate    = (string) ($hunian?->jadwalTagihan?->tanggal_generate ?? '1');
-        $this->tanggal_jatuh_tempo = (string) ($hunian?->jadwalTagihan?->tanggal_jatuh_tempo ?? '7');
         $this->isEditing           = true;
         $this->showModal           = true;
     }
@@ -90,17 +79,6 @@ new class extends Component {
                 ...($this->password ? ['password' => Hash::make($this->password)] : []),
             ]);
 
-            $hunian = $user->hunian()->where('status_hunian', 'aktif')->first();
-            if ($hunian) {
-                $hunian->update([
-                    'kamar_id'      => $this->kamar_id,
-                    'tanggal_masuk' => $this->tanggal_masuk,
-                ]);
-                $hunian->jadwalTagihan?->update([
-                    'tanggal_generate'    => $this->tanggal_generate,
-                    'tanggal_jatuh_tempo' => $this->tanggal_jatuh_tempo,
-                ]);
-            }
             session()->flash('success', 'Data penghuni berhasil diperbarui.');
         } else {
             $user = User::create([
@@ -112,22 +90,27 @@ new class extends Component {
                 'status_akun' => 'aktif',
             ]);
 
-            Kamar::where('kamar_id', $this->kamar_id)
-                 ->update(['status_kamar' => 'terisi']);
+            // Guard: kamar wajib masih tersedia
+            $kamar = Kamar::where('kamar_id', $this->kamar_id)
+                ->where('status_kamar', 'tersedia')
+                ->first();
 
-            $hunian = Hunian::create([
-                'user_id'       => $user->id,
-                'kamar_id'      => $this->kamar_id,
-                'tanggal_masuk' => $this->tanggal_masuk,
-                'status_hunian' => 'aktif',
+            if (! $kamar) {
+                $this->addError('kamar_id', 'Kamar yang dipilih sudah tidak tersedia.');
+                return;
+            }
+
+            $penghuni = User::create([
+                'nama_lengkap' => $this->nama_lengkap,
+                'email'        => $this->email,
+                'no_wa'        => $this->no_wa,
+                'password'     => Hash::make($this->password),
+                'role'         => 'penghuni',
+                'status_akun'  => 'aktif',
             ]);
 
-            JadwalTagihan::create([
-                'hunian_id'           => $hunian->hunian_id,
-                'tanggal_generate'    => $this->tanggal_generate,
-                'tanggal_jatuh_tempo' => $this->tanggal_jatuh_tempo,
-                'status_jadwal'       => 'aktif',
-            ]);
+            // Event-driven: listener akan buat hunian + jadwal tagihan
+            event(new PenghuniTerdaftar($penghuni, $kamar));
 
             session()->flash('success', 'Penghuni baru berhasil ditambahkan.');
         }

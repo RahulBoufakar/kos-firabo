@@ -22,7 +22,6 @@ new class extends Component {
     public function startEdit(int $id): void
     {
         $this->reset(['tanggal_generate', 'tanggal_jatuh_tempo']);
-
         $jadwal = JadwalTagihan::findOrFail($id);
         $this->editingId           = $jadwal->jadwal_id;
         $this->tanggal_generate    = (string) $jadwal->tanggal_generate;
@@ -39,12 +38,10 @@ new class extends Component {
     public function save(int $id): void
     {
         $this->validate();
-
         JadwalTagihan::findOrFail($id)->update([
             'tanggal_generate'    => $this->tanggal_generate,
             'tanggal_jatuh_tempo' => $this->tanggal_jatuh_tempo,
         ]);
-
         $this->cancelEdit();
         session()->flash('success', 'Jadwal tagihan berhasil diperbarui.');
         $this->resetPage();
@@ -57,20 +54,19 @@ new class extends Component {
             ->when($this->search, fn($q) =>
                 $q->whereHas('hunian.user', fn($q) =>
                     $q->where('name', 'like', "%{$this->search}%")
-                )
-                ->orWhereHas('hunian.kamar', fn($q) =>
+                )->orWhereHas('hunian.kamar', fn($q) =>
                     $q->where('nomor_kamar', 'like', "%{$this->search}%")
                 )
             )
             ->orderBy('jadwal_id')
             ->paginate(10);
 
-        return view('components.admin.jadwal-tagihan-table', compact('jadwalList'));
+        return view('components.admin.jadwal.table', compact('jadwalList'));
     }
 };
 ?>
 
-<div>
+<div class="table-card-wrapper">
     @if(session('success'))
         <div class="alert alert-success alert-dismissible fade show mb-3">
             <i class="bi bi-check-circle me-2"></i>{{ session('success') }}
@@ -84,17 +80,9 @@ new class extends Component {
                placeholder="Cari nama / kamar...">
     </div>
 
-    <div class="firabo-card p-0 overflow-hidden">
-        <div style="position:relative">
-            <div wire:loading
-                 style="position:absolute; inset:0; background:rgba(255,255,255,0.75);
-                        z-index:10; display:flex; align-items:center; justify-content:center;
-                        border-radius:0 0 12px 12px">
-                <div class="d-flex align-items-center gap-2" style="color:var(--firabo-primary)">
-                    <div class="spinner-border spinner-border-sm" role="status"></div>
-                    <span style="font-size:13px">Memuat...</span>
-                </div>
-            </div>
+    {{-- Desktop Table --}}
+    <div class="table-view">
+        <div class="firabo-card p-0 overflow-hidden">
             <table class="firabo-table">
                 <thead>
                     <tr>
@@ -117,13 +105,12 @@ new class extends Component {
                                 {{ $jadwal->hunian->kamar->nomor_kamar ?? '-' }}
                             </span>
                         </td>
-
-                        {{-- Inline edit tanggal_generate --}}
                         <td>
                             @if($editingId == $jadwal->jadwal_id)
                                 <input type="number" wire:model.live="tanggal_generate"
-                                    class="firabo-input" style="width:80px; height:32px; padding:0 8px"
-                                    min="1" max="28">
+                                       class="firabo-input"
+                                       style="width:80px; height:32px; padding:0 8px"
+                                       min="1" max="28">
                                 @error('tanggal_generate')
                                     <div class="text-danger" style="font-size:11px">{{ $message }}</div>
                                 @enderror
@@ -131,13 +118,12 @@ new class extends Component {
                                 Tanggal {{ $jadwal->tanggal_generate }}
                             @endif
                         </td>
-
-                        {{-- Inline edit tanggal_jatuh_tempo --}}
                         <td>
                             @if($editingId == $jadwal->jadwal_id)
                                 <input type="number" wire:model.live="tanggal_jatuh_tempo"
-                                    class="firabo-input" style="width:80px; height:32px; padding:0 8px"
-                                    min="1" max="30">
+                                       class="firabo-input"
+                                       style="width:80px; height:32px; padding:0 8px"
+                                       min="1" max="30">
                                 @error('tanggal_jatuh_tempo')
                                     <div class="text-danger" style="font-size:11px">{{ $message }}</div>
                                 @enderror
@@ -145,7 +131,6 @@ new class extends Component {
                                 {{ $jadwal->tanggal_jatuh_tempo }} hari
                             @endif
                         </td>
-
                         <td>
                             @if($jadwal->status_jadwal === 'aktif')
                                 <span class="badge-tersedia">Aktif</span>
@@ -153,7 +138,6 @@ new class extends Component {
                                 <span class="badge-nonaktif">Nonaktif</span>
                             @endif
                         </td>
-
                         <td class="text-end">
                             @if($editingId == $jadwal->jadwal_id)
                                 <button wire:click="save({{ $jadwal->jadwal_id }})"
@@ -182,27 +166,89 @@ new class extends Component {
                     @endforelse
                 </tbody>
             </table>
+            @include('components.admin.jadwal._pagination', ['data' => $jadwalList])
         </div>
-        <div class="d-flex align-items-center justify-content-between px-3 py-3 border-top"
-             style="font-size:13px; color:#6b7280">
-            <span>
-                Menampilkan {{ $jadwalList->firstItem() ?? 0 }}–{{ $jadwalList->lastItem() ?? 0 }}
-                dari {{ $jadwalList->total() }} jadwal
-            </span>
-            <div class="firabo-pagination">
-                <button class="page-btn" wire:click="previousPage"
-                        {{ !$jadwalList->onFirstPage() ?: 'disabled' }}>
-                    <i class="bi bi-chevron-left"></i>
-                </button>
-                @foreach($jadwalList->getUrlRange(1, $jadwalList->lastPage()) as $page => $url)
-                    <button class="page-btn {{ $page == $jadwalList->currentPage() ? 'active' : '' }}"
-                            wire:click="gotoPage({{ $page }})">{{ $page }}</button>
-                @endforeach
-                <button class="page-btn" wire:click="nextPage"
-                        {{ $jadwalList->hasMorePages() ?: 'disabled' }}>
-                    <i class="bi bi-chevron-right"></i>
-                </button>
+    </div>
+
+    {{-- Mobile Card --}}
+    <div class="card-view">
+        <div>
+            @forelse($jadwalList as $jadwal)
+            <div class="item-card">
+                <div class="item-card-header">
+                    <span class="item-card-title">
+                        {{ $jadwal->hunian->user->name ?? '-' }}
+                    </span>
+                    <div class="item-card-actions">
+                        @if($editingId == $jadwal->jadwal_id)
+                            <button wire:click="save({{ $jadwal->jadwal_id }})"
+                                    class="btn btn-sm btn-success">
+                                <i class="bi bi-check-lg"></i>
+                            </button>
+                            <button wire:click="cancelEdit"
+                                    class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        @else
+                            <button wire:click="startEdit({{ $jadwal->jadwal_id }})"
+                                    class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                        @endif
+                    </div>
+                </div>
+                <div class="item-card-body">
+                    <div class="item-card-field">
+                        <div class="field-label">Kamar</div>
+                        <div class="field-value" style="color:var(--firabo-primary)">
+                            {{ $jadwal->hunian->kamar->nomor_kamar ?? '-' }}
+                        </div>
+                    </div>
+                    <div class="item-card-field">
+                        <div class="field-label">Status</div>
+                        <div class="field-value">
+                            @if($jadwal->status_jadwal === 'aktif')
+                                <span class="badge-tersedia">Aktif</span>
+                            @else
+                                <span class="badge-nonaktif">Nonaktif</span>
+                            @endif
+                        </div>
+                    </div>
+                    <div class="item-card-field">
+                        <div class="field-label">Tgl Generate</div>
+                        <div class="field-value">
+                            @if($editingId == $jadwal->jadwal_id)
+                                <input type="number" wire:model.live="tanggal_generate"
+                                       class="firabo-input"
+                                       style="width:75px; height:32px; padding:0 8px"
+                                       min="1" max="28">
+                            @else
+                                Tanggal {{ $jadwal->tanggal_generate }}
+                            @endif
+                        </div>
+                    </div>
+                    <div class="item-card-field">
+                        <div class="field-label">Jatuh Tempo</div>
+                        <div class="field-value">
+                            @if($editingId == $jadwal->jadwal_id)
+                                <input type="number" wire:model.live="tanggal_jatuh_tempo"
+                                       class="firabo-input"
+                                       style="width:75px; height:32px; padding:0 8px"
+                                       min="1" max="30">
+                            @else
+                                {{ $jadwal->tanggal_jatuh_tempo }} hari
+                            @endif
+                        </div>
+                    </div>
+                </div>
             </div>
+            @empty
+            <div class="text-center py-4 text-muted">
+                <i class="bi bi-inbox fs-4 d-block mb-2"></i>
+                Tidak ada jadwal tagihan
+            </div>
+            @endforelse
+            @include('components.admin.jadwal._pagination', ['data' => $jadwalList])
         </div>
     </div>
 </div>
