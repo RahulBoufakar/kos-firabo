@@ -7,6 +7,6 @@
     <p class="page-subtitle">Pantau status tagihan seluruh penghuni.</p>
 </div>
 
-@livewire('admin.tagihan-table')
+@livewire('admin.tagihan.table')
 
 @endsection

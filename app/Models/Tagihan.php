@@ -2,7 +2,12 @@
 
 namespace App\Models;
 
+use App\Models\Hunian;
+use App\Models\JadwalTagihan;
+use App\Models\Pembayaran;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Tagihan extends Model
 {
@@ -32,5 +37,33 @@ class Tagihan extends Model
     public function pembayaran()
     {
         return $this->hasMany(Pembayaran::class, 'tagihan_id', 'tagihan_id');
+    }
+
+    // ── Helper ──────────────────────────────────────────────
+ 
+    /**
+     * Ambil pembayaran dengan status sukses (jika sudah lunas).
+     */
+    public function pembayaranLunas(): HasMany
+    {
+        return $this->hasMany(Pembayaran::class, 'tagihan_id', 'tagihan_id')
+            ->where('status_pembayaran', 'sukses');
+    }
+ 
+    /**
+     * Apakah tagihan ini sudah melewati jatuh tempo?
+     */
+    public function isTerlambat(): bool
+    {
+        return $this->status_tagihan !== 'lunas'
+            && Carbon::today()->gt($this->tanggal_jatuh_tempo);
+    }
+ 
+    /**
+     * Hitung sisa hari menuju jatuh tempo (negatif = sudah lewat).
+     */
+    public function sisaHari(): int
+    {
+        return Carbon::today()->diffInDays($this->tanggal_jatuh_tempo, false);
     }
 }

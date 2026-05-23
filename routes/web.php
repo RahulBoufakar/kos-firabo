@@ -61,8 +61,6 @@ Route::prefix('penghuni')
         Route::get('/tagihan/{tagihan}', [Penghuni\TagihanController::class, 'show'])
             ->name('tagihan.show');
 
-        Route::post('/pembayaran/{tagihan}', [Penghuni\PembayaranController::class, 'store'])
-            ->name('pembayaran.store');
         Route::get('/pembayaran', [Penghuni\PembayaranController::class, 'index'])
             ->name('pembayaran.index');
 

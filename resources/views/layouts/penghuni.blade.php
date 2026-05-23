@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     @vite(['resources/scss/app.scss', 'resources/js/app.js'])
     @livewireStyles
+    @stack('styles')
 </head>
 <body>
 
@@ -105,6 +106,7 @@
     </nav>
 </div>
 
+@stack('scripts')
 @livewireScripts
 </body>
 </html>
