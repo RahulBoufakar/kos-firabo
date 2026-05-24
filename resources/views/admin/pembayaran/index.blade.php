@@ -7,6 +7,6 @@
     <p class="page-subtitle">Rekap seluruh transaksi pembayaran.</p>
 </div>
 
-@livewire('admin.pembayaran-table')
+@livewire('admin.pembayaran.table')
 
 @endsection

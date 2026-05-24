@@ -122,7 +122,13 @@
 
 {{-- ══════════════════════════════════════════════
      MIDTRANS SNAP.JS
-     Diload di bagian bawah — hanya pada halaman ini.
+     - Script ini hanya dimuat jika tagihan belum lunas dan snapToken tersedia.
+     - Fungsi bayarSekarang() memanggil window.snap.pay() dengan snapToken.
+        - Callback onSuccess/onPending/onError/onClose menangani hasil pembayaran.
+        - Fungsi invalidateTokenDanRefresh() dipanggil saat onError untuk invalidasi token lama
+            dan refresh halaman agar dapat token baru.
+        - Script tambahan untuk menampilkan toast notifikasi berdasarkan query param transaction_status
+          yang dikirim dari redirect Midtrans setelah pembayaran selesai.
 ══════════════════════════════════════════════ --}}
 @push('scripts')
 @if (! $isLunas && $snapToken)
@@ -133,28 +139,57 @@
     data-client-key="{{ $clientKey }}"
 ></script>
 <script>
+// URL endpoint invalidate token — dibaca dari blade agar tidak hardcode di JS
+const invalidateUrl = '{{ route('penghuni.pembayaran.invalidate-token', $tagihan->tagihan_id) }}';
+ 
+// CSRF token diambil dari meta tag yang sudah ada di layout
+// Pastikan layout memiliki: <meta name="csrf-token" content="{{ csrf_token() }}">
+const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+ 
+async function invalidateTokenDanRefresh() {
+    // Panggil backend untuk tandai token lama sebagai 'gagal'
+    // sehingga getOrCreateSnapToken() akan generate token baru
+    try {
+        await fetch(invalidateUrl, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json',
+            },
+        });
+    } catch (e) {
+        // Tetap redirect meski fetch gagal — token baru tetap bisa digenerate
+        // selama record pending sebelumnya sudah ditandai expired oleh callback
+        console.warn('Invalidate token fetch failed:', e);
+    }
+ 
+    // Redirect ke halaman show yang sama — TagihanController@show
+    // akan memanggil getOrCreateSnapToken() dan generate token baru
+    window.location.href = '{{ route('penghuni.tagihan.show', $tagihan->tagihan_id) }}';
+}
+ 
 function bayarSekarang() {
     const btn = document.getElementById('pay-button');
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Memuat...';
-
+ 
     window.snap.pay('{{ $snapToken }}', {
         onSuccess: function(result) {
-            // Midtrans callback webhook akan update status di backend.
-            // Di sini kita cukup redirect ke daftar tagihan dengan pesan sukses.
-            window.location.href = '{{ route('penghuni.tagihan.index') }}?paid=1';
+            // Webhook Midtrans sudah/akan update status di backend.
+            // Redirect ke halaman yang sama dengan status param.
+            window.location.href = '{{ route('penghuni.tagihan.show', $tagihan->tagihan_id) }}?transaction_status=settlement';
         },
         onPending: function(result) {
-            window.location.href = '{{ route('penghuni.tagihan.index') }}?pending=1';
+            window.location.href = '{{ route('penghuni.tagihan.show', $tagihan->tagihan_id) }}?transaction_status=pending';
         },
         onError: function(result) {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="bi bi-credit-card me-2"></i>Bayar Sekarang';
-            alert('Pembayaran gagal. Silakan coba lagi.');
-            console.error('Midtrans error:', result);
+            // Token kemungkinan expired atau transaksi gagal.
+            // Invalidasi dulu, lalu refresh halaman untuk dapat token baru.
+            invalidateTokenDanRefresh();
         },
         onClose: function() {
-            // Popup ditutup tanpa transaksi — reset tombol
+            // User tutup popup tanpa bayar — cukup reset tombol.
+            // Tidak perlu invalidasi karena token masih bisa dipakai.
             btn.disabled = false;
             btn.innerHTML = '<i class="bi bi-credit-card me-2"></i>Bayar Sekarang';
         }
@@ -162,26 +197,46 @@ function bayarSekarang() {
 }
 </script>
 @endif
-
-{{-- Tampilkan flash setelah kembali dari Midtrans --}}
-@if (request('paid'))
+ 
+{{-- ── Baca query param dari redirect Midtrans (finish URL) atau dari JS handler ── --}}
+@php
+    $txStatus = request('transaction_status');
+@endphp
+ 
+@if ($txStatus === 'settlement')
 <script>
-    // Tampilkan notifikasi sukses ringan — status akan diupdate via webhook
     document.addEventListener('DOMContentLoaded', () => {
-        const toast = document.createElement('div');
-        toast.innerHTML = `
-            <div style="position:fixed;top:1.25rem;right:1.25rem;z-index:9999;
-                background:#dcfce7;border:1px solid #86efac;color:#166534;
-                padding:.75rem 1.25rem;border-radius:10px;font-size:.875rem;
-                display:flex;align-items:center;gap:.5rem;box-shadow:0 4px 12px rgba(0,0,0,.1);">
-                <i class="bi bi-check-circle-fill"></i>
-                Pembayaran diterima! Status akan diperbarui otomatis.
-            </div>`;
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 5000);
+        // Tampilkan toast sukses — status tagihan akan diupdate oleh webhook
+        const el = document.createElement('div');
+        el.innerHTML = `<div style="position:fixed;top:1.25rem;right:1.25rem;z-index:9999;
+            background:#dcfce7;border:1px solid #86efac;color:#166534;
+            padding:.75rem 1.25rem;border-radius:10px;font-size:.875rem;
+            display:flex;align-items:center;gap:.5rem;box-shadow:0 4px 12px rgba(0,0,0,.1);">
+            <i class="bi bi-check-circle-fill"></i>
+            Pembayaran berhasil! Status akan diperbarui otomatis.
+        </div>`;
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), 5000);
+    });
+</script>
+ 
+@elseif ($txStatus === 'pending')
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const el = document.createElement('div');
+        el.innerHTML = `<div style="position:fixed;top:1.25rem;right:1.25rem;z-index:9999;
+            background:#fef3c7;border:1px solid #fde68a;color:#92400e;
+            padding:.75rem 1.25rem;border-radius:10px;font-size:.875rem;
+            display:flex;align-items:center;gap:.5rem;box-shadow:0 4px 12px rgba(0,0,0,.1);">
+            <i class="bi bi-clock-fill"></i>
+            Pembayaran sedang diproses. Kami akan memberi tahu Anda setelah selesai.
+        </div>`;
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), 6000);
     });
 </script>
 @endif
+ 
 @endpush
 
 @push('styles')

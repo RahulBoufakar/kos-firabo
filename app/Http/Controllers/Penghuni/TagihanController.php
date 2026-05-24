@@ -41,7 +41,7 @@ class TagihanController extends Controller
         // Muat relasi yang dibutuhkan view
         $tagihan->load([
             'hunian.kamar',
-            'hunian.penghuni',
+            'hunian.user',
             'pembayaran' => fn($q) => $q->latest(),
         ]);
  

@@ -1,21 +1,35 @@
-<div class="d-flex align-items-center justify-content-between px-3 py-3 border-top"
-     style="font-size:13px; color:#6b7280">
-    <span>
-        Menampilkan {{ $data->firstItem() ?? 0 }}–{{ $data->lastItem() ?? 0 }}
-        dari {{ $data->total() }} jadwal
-    </span>
+{{-- _pagination.blade.php — pagination jadwal --}}
+@if($data->hasPages())
     <div class="firabo-pagination">
-        <button class="page-btn" wire:click="previousPage"
-                {{ !$data->onFirstPage() ?: 'disabled' }}>
-            <i class="bi bi-chevron-left"></i>
-        </button>
+        {{-- Prev --}}
+        @if($data->onFirstPage())
+            <button class="page-btn" disabled>
+                <i class="bi bi-chevron-left"></i>
+            </button>
+        @else
+            <button class="page-btn" wire:click="previousPage" wire:loading.attr="disabled">
+                <i class="bi bi-chevron-left"></i>
+            </button>
+        @endif
+
+        {{-- Page numbers --}}
         @foreach($data->getUrlRange(1, $data->lastPage()) as $page => $url)
-            <button class="page-btn {{ $page == $data->currentPage() ? 'active' : '' }}"
-                    wire:click="gotoPage({{ $page }})">{{ $page }}</button>
+            @if($page == $data->currentPage())
+                <button class="page-btn active">{{ $page }}</button>
+            @else
+                <button class="page-btn" wire:click="gotoPage({{ $page }})">{{ $page }}</button>
+            @endif
         @endforeach
-        <button class="page-btn" wire:click="nextPage"
-                {{ $data->hasMorePages() ?: 'disabled' }}>
-            <i class="bi bi-chevron-right"></i>
-        </button>
+
+        {{-- Next --}}
+        @if($data->hasMorePages())
+            <button class="page-btn" wire:click="nextPage" wire:loading.attr="disabled">
+                <i class="bi bi-chevron-right"></i>
+            </button>
+        @else
+            <button class="page-btn" disabled>
+                <i class="bi bi-chevron-right"></i>
+            </button>
+        @endif
     </div>
-</div>
+@endif

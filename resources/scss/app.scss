@@ -608,55 +608,57 @@ body {
             }
         }
     }
-    .item-card {
-        background: #fff;
-        border: 1px solid var(--firabo-border);
-        border-radius: 12px;
-        padding: 1rem 1.125rem;
-        margin-bottom: 10px;
+    
+}
 
-        .item-card-header {
+.item-card {
+    background: #fff;
+    border: 1px solid var(--firabo-border);
+    border-radius: 12px;
+    padding: 1rem 1.125rem;
+    margin-bottom: 10px;
+
+    .item-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0.625rem;
+
+        .item-card-title {
+            font-weight: 600;
+            font-size: 15px;
+            color: var(--firabo-primary);
+        }
+
+        .item-card-actions {
             display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 0.625rem;
+            gap: 6px;
+        }
+    }
 
-            .item-card-title {
-                font-weight: 600;
-                font-size: 15px;
-                color: var(--firabo-primary);
-            }
+    .item-card-body {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px 12px;
+    }
 
-            .item-card-actions {
-                display: flex;
-                gap: 6px;
-            }
+    .item-card-field {
+        .field-label {
+            font-size: 11px;
+            color: #9ca3af;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-bottom: 2px;
         }
 
-        .item-card-body {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px 12px;
+        .field-value {
+            font-size: 13px;
+            color: #374151;
+            font-weight: 500;
         }
 
-        .item-card-field {
-            .field-label {
-                font-size: 11px;
-                color: #9ca3af;
-                text-transform: uppercase;
-                letter-spacing: 0.04em;
-                margin-bottom: 2px;
-            }
-
-            .field-value {
-                font-size: 13px;
-                color: #374151;
-                font-weight: 500;
-            }
-
-            &.full-width {
-                grid-column: 1 / -1;
-            }
+        &.full-width {
+            grid-column: 1 / -1;
         }
     }
 }

@@ -27,6 +27,12 @@ class Pembayaran extends Model
         return $this->belongsTo(Tagihan::class, 'tagihan_id', 'tagihan_id');
     }
 
+    // Relasi ke User untuk referensi tabel lainya
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id', 'id');
+    }
+
     /**
      * Admin yang mencatat pembayaran manual.
      * Null untuk pembayaran online via Midtrans.

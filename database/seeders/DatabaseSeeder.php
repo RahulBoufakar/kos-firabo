@@ -3,26 +3,52 @@
 namespace Database\Seeders;
 
 use App\Models\User;
+use Database\Seeders\AdminSeeder;
+use Database\Seeders\KamarSeeder;
+use Database\Seeders\PenghuniSeeder;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
+/**
+ * DatabaseSeeder
+ *
+ * Orkestrasi urutan seeder. Urutan PENTING karena ada foreign key:
+ *
+ *   1. AdminSeeder     → users (admin)
+ *   2. KamarSeeder     → tb_kamar
+ *   3. PenghuniSeeder  → users (penghuni) + tb_hunian
+ *                        + tb_jadwal_tagihan + tb_tagihan
+ *
+ * Cara pakai:
+ *   php artisan migrate:fresh --seed     ← reset DB + seed dari awal
+ *   php artisan db:seed                  ← seed tanpa reset (hati-hati duplikat)
+ *   php artisan db:seed --class=AdminSeeder  ← jalankan satu seeder saja
+ */
 class DatabaseSeeder extends Seeder
 {
-    use WithoutModelEvents;
-
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        // User::factory()->create([
-        //     'name' => 'Test User',
-        //     'email' => 'test@example.com',
-        // ]);
+        $this->command->info('');
+        $this->command->info('  Kos Firabo — Database Seeder');
+        $this->command->info('  ============================');
+ 
         $this->call([
-            AdminSeeder::class,
+            AdminSeeder::class,    // 1. Admin dulu sebelum data lain
+            KamarSeeder::class,    // 2. Kamar sebelum penghuni (FK kamar_id)
+            PenghuniSeeder::class, // 3. Penghuni + hunian + jadwal + tagihan
         ]);
+ 
+        $this->command->info('');
+        $this->command->info('  Selesai! Ringkasan akun untuk testing:');
+        $this->command->info('');
+        $this->command->table(
+            ['Role', 'Email', 'Password', 'Keterangan'],
+            [
+                ['Admin',    'admin@firabo.test',     'admin123',    'Akses penuh panel admin'],
+                ['Penghuni', 'penghuni1@firabo.test', 'password123', 'Kamar A03 — ada tagihan belum bayar'],
+                ['Penghuni', 'penghuni2@firabo.test', 'password123', 'Kamar B03 — ada tagihan terlambat'],
+            ]
+        );
+        $this->command->info('');
     }
 }

@@ -1,363 +1,327 @@
 <?php
 
-use App\Models\User;
-use App\Models\Kamar;
-use App\Models\Hunian;
-use App\Models\JadwalTagihan;
+use App\Models\Tagihan;
 use Livewire\Component;
 use Livewire\WithPagination;
-use Illuminate\Support\Facades\Hash;
 
 new class extends Component {
     use WithPagination;
 
+    // ── Filter ────────────────────────────────────────────────────────────
     public string $search = '';
+    public string $status = '';  // belum_bayar | lunas | terlambat
 
-    public bool $showModal = false;
-    public bool $isEditing = false;
-    public ?int $editingId = null;
-
-    public bool $showDeleteConfirm = false;
-    public ?int $deletingId = null;
-
-    public string $name = '';
-    public string $email = '';
-    public string $no_wa = '';
-    public string $password = '';
-    public string $kamar_id = '';
-    public string $tanggal_masuk = '';
-    public string $tanggal_generate = '1';
-    public string $tanggal_jatuh_tempo = '7';
-
-    protected function rules(): array
-    {
-        return [
-            'name'                => 'required|string|max:100',
-            'email'               => 'required|email|unique:users,email,'
-                                     . ($this->editingId ?? 'NULL'),
-            'no_wa'               => 'required|string|max:20',
-            'password'            => $this->isEditing ? 'nullable|min:6' : 'required|min:6',
-            'kamar_id'            => 'required|exists:tb_kamar,kamar_id',
-            'tanggal_masuk'       => 'required|date',
-            'tanggal_generate'    => 'required|integer|min:1|max:28',
-            'tanggal_jatuh_tempo' => 'required|integer|min:1|max:30',
-        ];
-    }
-
-    public function updatingSearch(): void { $this->resetPage(); }
-
-    public function openCreate(): void
-    {
-        $this->reset(['name', 'email', 'no_wa', 'password',
-                      'kamar_id', 'tanggal_masuk', 'editingId']);
-        $this->tanggal_generate    = '1';
-        $this->tanggal_jatuh_tempo = '7';
-        $this->isEditing = false;
-        $this->showModal = true;
-    }
-
-    public function openEdit(int $id): void
-    {
-        $this->reset(['name', 'email', 'no_wa', 'password', 'kamar_id', 'tanggal_masuk']);
-
-        $user   = User::findOrFail($id);
-        $hunian = $user->hunian()->where('status_hunian', 'aktif')
-                       ->with('jadwalTagihan')->first();
-
-        $this->editingId           = $user->id;
-        $this->name                = $user->name;
-        $this->email               = $user->email;
-        $this->no_wa               = $user->no_wa ?? '';
-        $this->password            = '';
-        $this->kamar_id            = (string) ($hunian?->kamar_id ?? '');
-        $this->tanggal_masuk       = $hunian?->tanggal_masuk?->format('Y-m-d') ?? '';
-        $this->tanggal_generate    = (string) ($hunian?->jadwalTagihan?->tanggal_generate ?? '1');
-        $this->tanggal_jatuh_tempo = (string) ($hunian?->jadwalTagihan?->tanggal_jatuh_tempo ?? '7');
-        $this->isEditing           = true;
-        $this->showModal           = true;
-    }
-
-    public function save(): void
-    {
-        $this->validate();
-
-        if ($this->isEditing) {
-            $user = User::findOrFail($this->editingId);
-            $user->update([
-                'name'  => $this->name,
-                'email' => $this->email,
-                'no_wa' => $this->no_wa,
-                ...($this->password ? ['password' => Hash::make($this->password)] : []),
-            ]);
-
-            $hunian = $user->hunian()->where('status_hunian', 'aktif')->first();
-            if ($hunian) {
-                $hunian->update([
-                    'kamar_id'      => $this->kamar_id,
-                    'tanggal_masuk' => $this->tanggal_masuk,
-                ]);
-                $hunian->jadwalTagihan?->update([
-                    'tanggal_generate'    => $this->tanggal_generate,
-                    'tanggal_jatuh_tempo' => $this->tanggal_jatuh_tempo,
-                ]);
-            }
-            session()->flash('success', 'Data penghuni berhasil diperbarui.');
-        } else {
-            $user = User::create([
-                'name'        => $this->name,
-                'email'       => $this->email,
-                'no_wa'       => $this->no_wa,
-                'password'    => Hash::make($this->password),
-                'role'        => 'penghuni',
-                'status_akun' => 'aktif',
-            ]);
-
-            Kamar::where('kamar_id', $this->kamar_id)
-                 ->update(['status_kamar' => 'terisi']);
-
-            $hunian = Hunian::create([
-                'user_id'       => $user->id,
-                'kamar_id'      => $this->kamar_id,
-                'tanggal_masuk' => $this->tanggal_masuk,
-                'status_hunian' => 'aktif',
-            ]);
-
-            JadwalTagihan::create([
-                'hunian_id'           => $hunian->hunian_id,
-                'tanggal_generate'    => $this->tanggal_generate,
-                'tanggal_jatuh_tempo' => $this->tanggal_jatuh_tempo,
-                'status_jadwal'       => 'aktif',
-            ]);
-
-            session()->flash('success', 'Penghuni baru berhasil ditambahkan.');
-        }
-
-        $this->showModal = false;
-        $this->resetPage();
-    }
-
-    public function confirmDelete(int $id): void
-    {
-        $this->deletingId        = $id;
-        $this->showDeleteConfirm = true;
-    }
-
-    public function delete(): void
-    {
-        $user   = User::findOrFail($this->deletingId);
-        $hunian = $user->hunian()->where('status_hunian', 'aktif')->first();
-
-        if ($hunian) {
-            Kamar::where('kamar_id', $hunian->kamar_id)
-                 ->update(['status_kamar' => 'tersedia']);
-            $hunian->update([
-                'status_hunian'  => 'selesai',
-                'tanggal_keluar' => now(),
-            ]);
-        }
-
-        $user->update(['status_akun' => 'nonaktif']);
-        $this->showDeleteConfirm = false;
-        session()->flash('success', 'Penghuni berhasil dinonaktifkan.');
-        $this->resetPage();
-    }
+    // Reset pagination saat filter berubah
+    public function updatedSearch(): void { $this->resetPage(); }
+    public function updatedStatus(): void  { $this->resetPage(); }
 
     public function render()
     {
-        $penghuniList = User::where('role', 'penghuni')
-            ->when($this->search, fn($q) =>
-                $q->where('name', 'like', "%{$this->search}%")
-                  ->orWhere('email', 'like', "%{$this->search}%")
-                  ->orWhere('no_wa', 'like', "%{$this->search}%")
-            )
-            ->with(['hunian' => fn($q) =>
-                $q->where('status_hunian', 'aktif')->with('kamar')
+        $tagihan = Tagihan::query()
+            ->with([
+                'hunian.user',  // nama penghuni
+                'hunian.kamar',     // nomor kamar
+                'pembayaran' => fn($q) => $q->where('status_pembayaran', 'sukses')->latest()->limit(1),
             ])
-            ->orderBy('name')
+            // Pencarian: nama penghuni atau nomor kamar
+            ->when($this->search, fn($q) =>
+                $q->whereHas('hunian.user', fn($q2) =>
+                    $q2->where('name', 'like', "%{$this->search}%")
+                )->orWhereHas('hunian.kamar', fn($q2) =>
+                    $q2->where('nomor_kamar', 'like', "%{$this->search}%")
+                )
+            )
+            // Filter status
+            ->when($this->status, fn($q) =>
+                $q->where('status_tagihan', $this->status)
+            )
+            ->orderByDesc('tanggal_tagihan')
             ->paginate(10);
 
-        $kamarTersedia = Kamar::where('status_kamar', 'tersedia')
-            ->orderBy('nomor_kamar')
-            ->get();
-
-        return view('components.admin.penghuni.table',
-            compact('penghuniList', 'kamarTersedia'));
+        return view('components.admin.tagihan.table', compact('tagihan'));
     }
 };
 ?>
 
-<div
-    x-data="{ ready: false }"
-    x-init="setTimeout(() => ready = true, 600)"
-    class="table-card-wrapper"
->
-    @if(session('success'))
-        <div class="alert alert-success alert-dismissible fade show mb-3">
-            <i class="bi bi-check-circle me-2"></i>{{ session('success') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    @endif
+<div>
 
-    {{-- Toolbar --}}
-    <div class="d-flex align-items-center justify-content-between gap-3 mb-3 flex-wrap">
-        <div class="search-bar">
+    {{-- ══════════════════════════════════════════════════════════════
+         TOOLBAR
+    ══════════════════════════════════════════════════════════════ --}}
+    <div class="d-flex align-items-center gap-3 mb-3 flex-wrap">
+
+        <div class="search-bar flex-grow-1" style="max-width: 360px;">
             <i class="bi bi-search"></i>
-            <input type="text" wire:model.live.debounce.300ms="search"
-                   placeholder="Cari penghuni...">
+            <input
+                type="text"
+                wire:model.live.debounce.300ms="search"
+                placeholder="Cari nama penghuni atau nomor kamar..."
+            >
         </div>
-        <button wire:click="openCreate" class="btn-firabo">
-            <i class="bi bi-plus-lg"></i> Tambah Penghuni
-        </button>
+
+        <select class="firabo-input" wire:model.live="status" style="max-width: 180px;">
+            <option value="">Semua Status</option>
+            <option value="belum_bayar">Belum Bayar</option>
+            <option value="lunas">Lunas</option>
+            <option value="terlambat">Terlambat</option>
+        </select>
+
     </div>
 
-    {{-- Desktop Table --}}
-    <div class="table-view">
-        <div class="firabo-card p-0 overflow-hidden">
-            <table class="firabo-table">
-                <thead>
-                    <tr>
-                        <th>Nama</th>
-                        <th>Email</th>
-                        <th>No. WA</th>
-                        <th>Kamar</th>
-                        <th>Status</th>
-                        <th class="text-end">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody x-show="!ready" x-cloak>
-                    @include('components.admin.penghuni._skeleton')
-                </tbody>
-                <tbody x-show="ready" x-cloak>
-                    @forelse($penghuniList as $user)
-                    <tr>
-                        <td style="font-weight:500">{{ $user->name }}</td>
-                        <td style="font-size:13px; color:#6b7280">{{ $user->email }}</td>
-                        <td style="font-size:13px">{{ $user->no_wa ?? '-' }}</td>
-                        <td>
-                            @php $hunian = $user->hunian->first(); @endphp
-                            @if($hunian)
-                                <span style="color:var(--firabo-primary); font-weight:500">
-                                    {{ $hunian->kamar->nomor_kamar ?? '-' }}
-                                </span>
-                            @else
-                                <span class="text-muted">-</span>
-                            @endif
-                        </td>
-                        <td>
-                            @if($user->status_akun === 'aktif')
-                                <span class="badge-tersedia">Aktif</span>
-                            @else
-                                <span class="badge-nonaktif">Nonaktif</span>
-                            @endif
-                        </td>
-                        <td class="text-end">
-                            <button wire:click="openEdit({{ $user->id }})"
-                                    class="btn btn-sm btn-outline-secondary me-1">
-                                <i class="bi bi-pencil"></i>
-                            </button>
-                            <button wire:click="confirmDelete({{ $user->id }})"
-                                    class="btn btn-sm btn-outline-danger"
-                                    {{ $user->status_akun === 'nonaktif' ? 'disabled' : '' }}>
-                                <i class="bi bi-person-x"></i>
-                            </button>
-                        </td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="6" class="text-center py-4 text-muted">
-                            <i class="bi bi-inbox fs-4 d-block mb-2"></i>
-                            Tidak ada penghuni ditemukan
-                        </td>
-                    </tr>
-                    @endforelse
-                </tbody>
-            </table>
-            @include('components.admin.penghuni._pagination', ['data' => $penghuniList])
-        </div>
-    </div>
+    {{-- ══════════════════════════════════════════════════════════════
+         TABLE + CARD WRAPPER (responsive via container query)
+    ══════════════════════════════════════════════════════════════ --}}
+    <div
+        class="table-card-wrapper"
+        x-data="{ ready: false }"
+        x-init="setTimeout(() => ready = true, 600)"
+    >
 
-    {{-- Mobile Card --}}
-    <div class="card-view">
-        <div x-show="!ready" x-cloak>
-            @for($i = 0; $i < 4; $i++)
-            <div class="item-card">
-                <div class="item-card-header">
-                    <div class="skeleton skeleton-text" style="width:130px; height:16px"></div>
-                    <div class="skeleton" style="width:70px; height:28px; border-radius:6px"></div>
-                </div>
-                <div class="item-card-body">
-                    <div class="item-card-field">
-                        <div class="skeleton skeleton-text" style="width:35px; margin-bottom:4px"></div>
-                        <div class="skeleton skeleton-text" style="width:55px"></div>
-                    </div>
-                    <div class="item-card-field">
-                        <div class="skeleton skeleton-text" style="width:40px; margin-bottom:4px"></div>
-                        <div class="skeleton skeleton-badge"></div>
-                    </div>
-                    <div class="item-card-field full-width">
-                        <div class="skeleton skeleton-text" style="width:35px; margin-bottom:4px"></div>
-                        <div class="skeleton skeleton-text" style="width:160px"></div>
-                    </div>
-                </div>
-            </div>
-            @endfor
-        </div>
+        {{-- ── Desktop: Table ── --}}
+        <div class="table-view">
+            <div class="firabo-card p-0 overflow-hidden">
+                <table class="firabo-table">
+                    <thead>
+                        <tr>
+                            <th>Penghuni</th>
+                            <th>Kamar</th>
+                            <th>Periode</th>
+                            <th>Nominal</th>
+                            <th>Jatuh Tempo</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
 
-        <div x-show="ready" x-cloak>
-            @forelse($penghuniList as $user)
-            @php $hunian = $user->hunian->first(); @endphp
-            <div class="item-card">
-                <div class="item-card-header">
-                    <span class="item-card-title">{{ $user->name }}</span>
-                    <div class="item-card-actions">
-                        <button wire:click="openEdit({{ $user->id }})"
-                                class="btn btn-sm btn-outline-secondary">
-                            <i class="bi bi-pencil"></i>
-                        </button>
-                        <button wire:click="confirmDelete({{ $user->id }})"
-                                class="btn btn-sm btn-outline-danger"
-                                {{ $user->status_akun === 'nonaktif' ? 'disabled' : '' }}>
-                            <i class="bi bi-person-x"></i>
-                        </button>
-                    </div>
-                </div>
-                <div class="item-card-body">
-                    <div class="item-card-field">
-                        <div class="field-label">Kamar</div>
-                        <div class="field-value" style="color:var(--firabo-primary)">
-                            {{ $hunian?->kamar->nomor_kamar ?? '-' }}
+                    {{-- Skeleton --}}
+                    <tbody x-show="!ready" x-cloak>
+                        @include('components.admin.tagihan._skeleton')
+                    </tbody>
+
+                    {{-- Data --}}
+                    <tbody x-show="ready" x-cloak>
+                        @forelse ($tagihan as $t)
+                            @php
+                                $penghuni    = $t->hunian?->user;
+                                $kamar       = $t->hunian?->kamar;
+                                $sisaHari    = \Carbon\Carbon::today()->diffInDays($t->tanggal_jatuh_tempo, false);
+                                $isTerlambat = $t->status_tagihan === 'terlambat';
+                                $isLunas     = $t->status_tagihan === 'lunas';
+                            @endphp
+                            <tr>
+
+                                {{-- Penghuni --}}
+                                <td>
+                                    <div class="fw-semibold" style="color: var(--firabo-primary-dark); font-size: .9rem;">
+                                        {{ $penghuni?->name ?? '—' }}
+                                    </div>
+                                    <div style="font-size: .75rem; color: #9ca3af; margin-top: 1px;">
+                                        {{ $penghuni?->email ?? '' }}
+                                    </div>
+                                </td>
+
+                                {{-- Kamar --}}
+                                <td>
+                                    <span class="fw-medium" style="color: var(--firabo-primary);">
+                                        {{ $kamar?->nomor_kamar ?? '—' }}
+                                    </span>
+                                    <div style="font-size: .75rem; color: #9ca3af;">
+                                        {{ $kamar?->tipe_kamar ?? '' }}
+                                    </div>
+                                </td>
+
+                                {{-- Periode --}}
+                                <td style="font-size: .875rem; color: #374151;">
+                                    {{ \Carbon\Carbon::parse($t->tanggal_tagihan)->translatedFormat('F Y') }}
+                                </td>
+
+                                {{-- Nominal --}}
+                                <td class="fw-semibold" style="color: var(--firabo-primary-dark);">
+                                    Rp {{ number_format($t->nominal, 0, ',', '.') }}
+                                </td>
+
+                                {{-- Jatuh Tempo --}}
+                                <td>
+                                    <div style="font-size: .85rem; {{ $isTerlambat ? 'color: #991b1b; font-weight: 600;' : 'color: #4b5563;' }}">
+                                        {{ \Carbon\Carbon::parse($t->tanggal_jatuh_tempo)->translatedFormat('d M Y') }}
+                                    </div>
+                                    @if (! $isLunas)
+                                        <div style="font-size: .72rem; margin-top: 1px; color: {{ $isTerlambat ? '#991b1b' : '#9ca3af' }};">
+                                            @if ($isTerlambat)
+                                                {{ abs($sisaHari) }} hari terlambat
+                                            @elseif ($sisaHari === 0)
+                                                Hari ini
+                                            @else
+                                                {{ $sisaHari }} hari lagi
+                                            @endif
+                                        </div>
+                                    @endif
+                                </td>
+
+                                {{-- Status --}}
+                                <td>
+                                    @if ($isLunas)
+                                        <span class="badge-lunas">Lunas</span>
+                                    @elseif ($isTerlambat)
+                                        <span class="badge-terlambat">Terlambat</span>
+                                    @else
+                                        <span class="badge-belum">Belum Bayar</span>
+                                    @endif
+                                </td>
+
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="6" class="text-center py-5 text-muted">
+                                    <i class="bi bi-receipt d-block mb-2" style="font-size: 1.75rem; opacity: .4;"></i>
+                                    Tidak ada tagihan ditemukan.
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+
+                {{-- Pagination footer --}}
+                @if ($tagihan->hasPages())
+                    <div class="d-flex align-items-center justify-content-between px-3 py-2"
+                         style="border-top: 1px solid var(--firabo-border); background: #fafafa;">
+                        <span style="font-size: .8rem; color: #6b7280;">
+                            Menampilkan {{ $tagihan->firstItem() }}–{{ $tagihan->lastItem() }}
+                            dari {{ $tagihan->total() }} tagihan
+                        </span>
+                        <div class="firabo-pagination">
+                            <button class="page-btn" wire:click="previousPage"
+                                {{ $tagihan->onFirstPage() ? 'disabled' : '' }}>
+                                <i class="bi bi-chevron-left"></i>
+                            </button>
+                            @foreach ($tagihan->getUrlRange(
+                                max(1, $tagihan->currentPage() - 2),
+                                min($tagihan->lastPage(), $tagihan->currentPage() + 2)
+                            ) as $page => $url)
+                                <button
+                                    class="page-btn {{ $page == $tagihan->currentPage() ? 'active' : '' }}"
+                                    wire:click="gotoPage({{ $page }})"
+                                >{{ $page }}</button>
+                            @endforeach
+                            <button class="page-btn" wire:click="nextPage"
+                                {{ $tagihan->hasMorePages() ? '' : 'disabled' }}>
+                                <i class="bi bi-chevron-right"></i>
+                            </button>
                         </div>
                     </div>
-                    <div class="item-card-field">
-                        <div class="field-label">Status</div>
-                        <div class="field-value">
-                            @if($user->status_akun === 'aktif')
-                                <span class="badge-tersedia">Aktif</span>
-                            @else
-                                <span class="badge-nonaktif">Nonaktif</span>
-                            @endif
+                @endif
+
+            </div>
+        </div>
+
+        {{-- ── Mobile: Card View ── --}}
+        <div class="card-view">
+
+            {{-- Skeleton mobile --}}
+            <div x-show="!ready" x-cloak>
+                @for ($i = 0; $i < 4; $i++)
+                    <div class="item-card">
+                        <div class="item-card-header">
+                            <div class="skel" style="width:140px;height:14px;border-radius:4px;"></div>
+                            <div class="skel" style="width:72px;height:22px;border-radius:20px;"></div>
+                        </div>
+                        <div class="item-card-body">
+                            <div class="item-card-field">
+                                <div class="skel" style="width:35px;height:11px;border-radius:4px;margin-bottom:4px;"></div>
+                                <div class="skel" style="width:55px;height:13px;border-radius:4px;"></div>
+                            </div>
+                            <div class="item-card-field">
+                                <div class="skel" style="width:40px;height:11px;border-radius:4px;margin-bottom:4px;"></div>
+                                <div class="skel" style="width:80px;height:13px;border-radius:4px;"></div>
+                            </div>
+                            <div class="item-card-field full-width">
+                                <div class="skel" style="width:50px;height:11px;border-radius:4px;margin-bottom:4px;"></div>
+                                <div class="skel" style="width:90px;height:13px;border-radius:4px;"></div>
+                            </div>
                         </div>
                     </div>
-                    <div class="item-card-field full-width">
-                        <div class="field-label">Email</div>
-                        <div class="field-value" style="font-size:12px">{{ $user->email }}</div>
-                    </div>
-                    <div class="item-card-field full-width">
-                        <div class="field-label">No. WA</div>
-                        <div class="field-value">{{ $user->no_wa ?? '-' }}</div>
-                    </div>
-                </div>
+                @endfor
             </div>
-            @empty
-            <div class="text-center py-4 text-muted">
-                <i class="bi bi-inbox fs-4 d-block mb-2"></i>
-                Tidak ada penghuni ditemukan
-            </div>
-            @endforelse
-            @include('components.admin.penghuni._pagination', ['data' => $penghuniList])
-        </div>
-    </div>
 
-    @include('components.admin.penghuni._modal-form')
-    @include('components.admin.penghuni._modal-delete')
+            {{-- Data mobile --}}
+            <div x-show="ready" x-cloak>
+                @forelse ($tagihan as $t)
+                    @php
+                        $penghuni    = $t->hunian?->penghuni;
+                        $kamar       = $t->hunian?->kamar;
+                        $sisaHari    = \Carbon\Carbon::today()->diffInDays($t->tanggal_jatuh_tempo, false);
+                        $isTerlambat = $t->status_tagihan === 'terlambat';
+                        $isLunas     = $t->status_tagihan === 'lunas';
+                    @endphp
+                    <div class="item-card">
+                        <div class="item-card-header">
+                            <span class="item-card-title">{{ $penghuni?->name ?? '—' }}</span>
+                            @if ($isLunas)
+                                <span class="badge-lunas">Lunas</span>
+                            @elseif ($isTerlambat)
+                                <span class="badge-terlambat">Terlambat</span>
+                            @else
+                                <span class="badge-belum">Belum Bayar</span>
+                            @endif
+                        </div>
+                        <div class="item-card-body">
+                            <div class="item-card-field">
+                                <div class="field-label">Kamar</div>
+                                <div class="field-value" style="color: var(--firabo-primary); font-weight: 600;">
+                                    {{ $kamar?->nomor_kamar ?? '—' }}
+                                </div>
+                            </div>
+                            <div class="item-card-field">
+                                <div class="field-label">Periode</div>
+                                <div class="field-value">
+                                    {{ \Carbon\Carbon::parse($t->tanggal_tagihan)->translatedFormat('M Y') }}
+                                </div>
+                            </div>
+                            <div class="item-card-field">
+                                <div class="field-label">Nominal</div>
+                                <div class="field-value fw-semibold">
+                                    Rp {{ number_format($t->nominal, 0, ',', '.') }}
+                                </div>
+                            </div>
+                            <div class="item-card-field full-width">
+                                <div class="field-label">Jatuh Tempo</div>
+                                <div class="field-value {{ $isTerlambat ? 'text-danger fw-semibold' : '' }}">
+                                    {{ \Carbon\Carbon::parse($t->tanggal_jatuh_tempo)->translatedFormat('d F Y') }}
+                                    @if (! $isLunas)
+                                        <span style="font-size: .75rem; font-weight: 400; color: {{ $isTerlambat ? '#991b1b' : '#9ca3af' }};">
+                                            ({{ $isTerlambat ? abs($sisaHari).' hari terlambat' : ($sisaHari === 0 ? 'hari ini' : $sisaHari.' hari lagi') }})
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @empty
+                    <div class="text-center py-4 text-muted">
+                        <i class="bi bi-receipt d-block mb-2" style="font-size: 1.75rem; opacity: .4;"></i>
+                        Tidak ada tagihan ditemukan.
+                    </div>
+                @endforelse
+
+                {{-- Pagination mobile --}}
+                @include('components.admin.tagihan._pagination', ['data' => $tagihan])
+            </div>
+
+        </div>
+
+    </div>{{-- /table-card-wrapper --}}
+
 </div>
+
+<style>
+/* Skeleton shimmer — scope lokal agar tidak konflik */
+.skel {
+    display: block;
+    background: linear-gradient(90deg, #e5e7eb 25%, #f3f4f6 50%, #e5e7eb 75%);
+    background-size: 200% 100%;
+    animation: skel-shimmer 1.4s infinite;
+}
+@keyframes skel-shimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+</style>

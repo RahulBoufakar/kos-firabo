@@ -7,51 +7,41 @@ use Livewire\WithPagination;
 new class extends Component {
     use WithPagination;
 
-    public string $search = '';
+    // ── View State ─────────────────────────────────────────────────────────
+    // 'table'   → tampilan tabel normal
+    // 'skeleton'→ animasi transisi 700ms sebelum form muncul
+    // 'form'    → form tambah/edit
+    public string $activeView = 'table';
+
+    // ── Filter ─────────────────────────────────────────────────────────────
+    public string $search       = '';
     public string $filterStatus = '';
 
-    public bool $showModal = false;
-    public bool $isEditing = false;
-    public ?int $editingId = null;
-
-    public bool $showDeleteConfirm = false;
-    public ?int $deletingId = null;
-
-    public string $nomor_kamar = '';
-    public string $tipe_kamar = '';
-    public string $harga_sewa = '';
-    public string $fasilitas = '';
+    // ── Form Fields ────────────────────────────────────────────────────────
+    public bool   $isEditing    = false;
+    public ?int   $editingId    = null;
+    public string $nomor_kamar  = '';
+    public string $tipe_kamar   = '';
+    public string $harga_sewa   = '';
+    public string $fasilitas    = '';
     public string $status_kamar = 'tersedia';
 
-    protected function rules(): array
-    {
-        return [
-            'nomor_kamar'  => 'required|string|max:10|unique:tb_kamar,nomor_kamar,'
-                              . ($this->editingId ?? 'NULL') . ',kamar_id',
-            'tipe_kamar'   => 'required|string|max:50',
-            'harga_sewa'   => 'required|numeric|min:0',
-            'fasilitas'    => 'nullable|string',
-            'status_kamar' => 'required|in:tersedia,terisi,nonaktif',
-        ];
-    }
-
-    public function updatingSearch(): void { $this->resetPage(); }
+    public function updatingSearch(): void       { $this->resetPage(); }
     public function updatingFilterStatus(): void { $this->resetPage(); }
 
     public function openCreate(): void
     {
-        $this->reset(['nomor_kamar', 'tipe_kamar', 'harga_sewa',
-                      'fasilitas', 'editingId']);
+        $this->reset(['nomor_kamar', 'tipe_kamar', 'harga_sewa', 'fasilitas', 'editingId']);
         $this->status_kamar = 'tersedia';
         $this->isEditing    = false;
-        $this->showModal    = true;
+        $this->resetValidation();
+        $this->activeView   = 'skeleton';
     }
 
     public function openEdit(int $id): void
     {
-        $this->reset(['nomor_kamar', 'tipe_kamar', 'harga_sewa', 'fasilitas']);
-
         $kamar = Kamar::findOrFail($id);
+
         $this->editingId    = $kamar->kamar_id;
         $this->nomor_kamar  = $kamar->nomor_kamar;
         $this->tipe_kamar   = $kamar->tipe_kamar;
@@ -59,12 +49,31 @@ new class extends Component {
         $this->fasilitas    = $kamar->fasilitas ?? '';
         $this->status_kamar = $kamar->status_kamar;
         $this->isEditing    = true;
-        $this->showModal    = true;
+        $this->resetValidation();
+        $this->activeView   = 'skeleton';
+    }
+
+    public function cancelForm(): void
+    {
+        $this->reset(['nomor_kamar', 'tipe_kamar', 'harga_sewa', 'fasilitas', 'editingId', 'isEditing']);
+        $this->status_kamar = 'tersedia';
+        $this->resetValidation();
+        $this->activeView   = 'table';
     }
 
     public function save(): void
     {
-        $this->validate();
+        $this->validate([
+            'nomor_kamar'  => 'required|string|max:10|unique:tb_kamar,nomor_kamar,'
+                              . ($this->editingId ?? 'NULL') . ',kamar_id',
+            'tipe_kamar'   => 'required|string|max:50',
+            'harga_sewa'   => 'required|numeric|min:0',
+            'fasilitas'    => 'nullable|string',
+            'status_kamar' => 'required|in:tersedia,terisi,nonaktif',
+        ], [
+            'nomor_kamar.unique' => 'Nomor kamar sudah digunakan.',
+            'harga_sewa.numeric' => 'Harga sewa harus berupa angka.',
+        ]);
 
         if ($this->isEditing) {
             Kamar::findOrFail($this->editingId)->update([
@@ -74,35 +83,32 @@ new class extends Component {
                 'fasilitas'    => $this->fasilitas,
                 'status_kamar' => $this->status_kamar,
             ]);
-            session()->flash('success', 'Data kamar berhasil diperbarui.');
         } else {
             Kamar::create([
                 'nomor_kamar'  => $this->nomor_kamar,
                 'tipe_kamar'   => $this->tipe_kamar,
                 'harga_sewa'   => $this->harga_sewa,
                 'fasilitas'    => $this->fasilitas,
-                'status_kamar' => $this->status_kamar,
+                'status_kamar' => 'tersedia',
             ]);
-            session()->flash('success', 'Kamar baru berhasil ditambahkan.');
         }
 
-        $this->showModal = false;
+        $pesan = $this->isEditing ? 'Kamar berhasil diperbarui.' : 'Kamar baru berhasil ditambahkan.';
+
+        $this->reset(['nomor_kamar', 'tipe_kamar', 'harga_sewa', 'fasilitas', 'editingId', 'isEditing']);
+        $this->status_kamar = 'tersedia';
+        $this->activeView   = 'table';
         $this->resetPage();
+
+        $this->dispatch('toast', pesan: $pesan, tipe: 'sukses');
     }
 
-    public function confirmDelete(int $id): void
+    // Dipanggil HANYA setelah user konfirmasi di _modal-hapus
+    public function delete(int $id): void
     {
-        $this->deletingId        = $id;
-        $this->showDeleteConfirm = true;
-    }
-
-    public function delete(): void
-    {
-        Kamar::findOrFail($this->deletingId)->delete();
-        $this->showDeleteConfirm = false;
-        $this->deletingId        = null;
-        session()->flash('success', 'Kamar berhasil dihapus.');
+        Kamar::findOrFail($id)->delete();
         $this->resetPage();
+        $this->dispatch('toast', pesan: 'Kamar berhasil dihapus.', tipe: 'sukses');
     }
 
     public function render()
@@ -123,207 +129,349 @@ new class extends Component {
 };
 ?>
 
+{{--
+    Alpine x-data di root mengurus dua hal sekaligus:
+    1. showSkeleton — timer 700ms transisi tabel → form
+    2. deletePopup  — state popup konfirmasi hapus
+    Keduanya harus di root karena _modal-hapus dan view:skeleton
+    perlu mengakses scope Alpine yang sama.
+--}}
 <div
-    x-data="{ ready: false }"
-    x-init="setTimeout(() => ready = true, 600)"
-    class="table-card-wrapper"
->   
-    {{-- Flash --}}
-    @if(session('success'))
-        <div class="alert alert-success alert-dismissible fade show mb-3">
-            <i class="bi bi-check-circle me-2"></i>{{ session('success') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    @endif
+    x-data="{
+        showSkeleton: false,
+        deletePopup: { show: false, id: null, nama: '' },
+        toast: { show: false, pesan: '', tipe: 'sukses' }, // tipe: 'sukses' | 'gagal'
 
-    {{-- Toolbar --}}
-    <div class="d-flex align-items-center justify-content-between gap-3 mb-3 flex-wrap">
-        <div class="d-flex gap-2 flex-wrap">
-            <div class="search-bar">
-                <i class="bi bi-search"></i>
-                <input type="text"
-                       wire:model.live.debounce.300ms="search"
-                       placeholder="Cari kamar...">
-            </div>
-            <select wire:model.live="filterStatus"
+        mulaiSkeleton() {
+            this.showSkeleton = true;
+            setTimeout(() => {
+                this.showSkeleton = false;
+                $wire.activeView = 'form';
+            }, 700);
+        },
+        bukaPopupHapus(id, nama) {
+            this.deletePopup = { show: true, id, nama };
+        },
+        tutupPopupHapus() {
+            this.deletePopup = { show: false, id: null, nama: '' };
+        },
+        konfirmasiHapus() {
+            $wire.delete(this.deletePopup.id);
+            this.tutupPopupHapus();
+        },
+        tampilToast(pesan, tipe = 'sukses') {
+            this.toast = { show: true, pesan, tipe };
+            setTimeout(() => this.toast.show = false, 3000);
+        }
+    }"
+    x-init="
+        $watch('$wire.activeView', val => {
+            if (val === 'skeleton') mulaiSkeleton();
+        });
+        $wire.on('toast', ({ pesan, tipe }) => tampilToast(pesan, tipe));
+    "
+>
+
+    {{-- ════════════════════════════════════════════════════════════════
+         VIEW: TABEL
+    ════════════════════════════════════════════════════════════════ --}}
+    <div
+        x-show="$wire.activeView === 'table'"
+        x-transition:enter="transition ease-out duration-200"
+        x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100"
+        x-transition:leave="transition ease-in duration-150"
+        x-transition:leave-end="opacity-0"
+    >
+        {{-- Toolbar --}}
+        <div class="d-flex align-items-center justify-content-between gap-3 mb-3 flex-wrap">
+            <div class="d-flex gap-2 flex-wrap">
+                <div class="search-bar">
+                    <i class="bi bi-search"></i>
+                    <input
+                        type="text"
+                        wire:model.live.debounce.300ms="search"
+                        placeholder="Cari kamar..."
+                    >
+                </div>
+                <select
+                    wire:model.live="filterStatus"
                     class="firabo-input"
-                    style="width:auto; height:38px; padding:0 0.875rem">
-                <option value="">Semua Status</option>
-                <option value="tersedia">Tersedia</option>
-                <option value="terisi">Terisi</option>
-                <option value="nonaktif">Nonaktif</option>
-            </select>
+                    style="width: auto; height: 38px; padding: 0 0.875rem;"
+                >
+                    <option value="">Semua Status</option>
+                    <option value="tersedia">Tersedia</option>
+                    <option value="terisi">Terisi</option>
+                    <option value="nonaktif">Nonaktif</option>
+                </select>
+            </div>
+            <button wire:click="openCreate" class="btn-firabo">
+                <i class="bi bi-plus-lg"></i> Tambah Kamar
+            </button>
         </div>
-        <button wire:click="openCreate" class="btn-firabo">
-            <i class="bi bi-plus-lg"></i> Tambah Kamar
-        </button>
-    </div>
 
-    {{-- ── DESKTOP — Table view ── --}}
-    <div class="table-view">
-        <div class="firabo-card p-0 overflow-hidden">
-            <table class="firabo-table">
-                <thead>
-                    <tr>
-                        <th>Nomor Kamar</th>
-                        <th>Tipe Kamar</th>
-                        <th>Harga Sewa</th>
-                        <th>Fasilitas</th>
-                        <th>Status</th>
-                        <th class="text-end">Aksi</th>
-                    </tr>
-                </thead>
+        {{-- Table + Card wrapper --}}
+        <div
+            class="table-card-wrapper"
+            x-data="{ ready: false }"
+            x-init="setTimeout(() => ready = true, 600)"
+        >
+            {{-- ── Desktop ── --}}
+            <div class="table-view">
+                <div class="firabo-card p-0 overflow-hidden">
+                    <table class="firabo-table">
+                        <thead>
+                            <tr>
+                                <th>Nomor Kamar</th>
+                                <th>Tipe Kamar</th>
+                                <th>Harga Sewa</th>
+                                <th>Fasilitas</th>
+                                <th>Status</th>
+                                <th class="text-end">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody x-show="!ready" x-cloak>
+                            @include('components.admin.kamar._skeleton')
+                        </tbody>
+                        <tbody x-show="ready" x-cloak>
+                            @forelse ($kamar as $item)
+                                <tr>
+                                    <td>
+                                        <span style="color: var(--firabo-primary); font-weight: 500;">
+                                            {{ $item->nomor_kamar }}
+                                        </span>
+                                    </td>
+                                    <td>{{ $item->tipe_kamar }}</td>
+                                    <td>Rp {{ number_format($item->harga_sewa, 0, ',', '.') }}/bln</td>
+                                    <td style="max-width: 180px;">
+                                        <span class="text-truncate d-block" title="{{ $item->fasilitas }}">
+                                            {{ $item->fasilitas ?? '-' }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        @if ($item->status_kamar === 'tersedia')
+                                            <span class="badge-tersedia">Tersedia</span>
+                                        @elseif ($item->status_kamar === 'terisi')
+                                            <span class="badge-terisi">Terisi</span>
+                                        @else
+                                            <span class="badge-nonaktif">Nonaktif</span>
+                                        @endif
+                                    </td>
+                                    <td class="text-end">
+                                        <button
+                                            wire:click="openEdit({{ $item->kamar_id }})"
+                                            class="btn btn-sm btn-outline-secondary me-1"
+                                            title="Edit"
+                                        >
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button
+                                            @click="bukaPopupHapus({{ $item->kamar_id }}, '{{ addslashes('Kamar '.$item->nomor_kamar) }}')"
+                                            class="btn btn-sm btn-outline-danger"
+                                            {{ $item->status_kamar === 'terisi' ? 'disabled' : '' }}
+                                            title="Hapus"
+                                        >
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="6" class="text-center py-4 text-muted">
+                                        <i class="bi bi-inbox fs-4 d-block mb-2"></i>
+                                        Tidak ada data kamar ditemukan
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                    @include('components.admin.kamar._pagination', ['data' => $kamar])
+                </div>
+            </div>
 
-                {{-- Skeleton --}}
-                <tbody x-show="!ready" x-cloak>
-                    @include('components.admin.kamar._skeleton')
-                </tbody>
-
-                {{-- Data --}}
-                <tbody x-show="ready" x-cloak>
-                    @forelse($kamar as $item)
-                    <tr>
-                        <td>
-                            <span style="color:var(--firabo-primary); font-weight:500">
-                                {{ $item->nomor_kamar }}
-                            </span>
-                        </td>
-                        <td>{{ $item->tipe_kamar }}</td>
-                        <td>Rp {{ number_format($item->harga_sewa, 0, ',', '.') }}/bln</td>
-                        <td style="max-width:180px">
-                            <span class="text-truncate d-block" title="{{ $item->fasilitas }}">
-                                {{ $item->fasilitas ?? '-' }}
-                            </span>
-                        </td>
-                        <td>
-                            @if($item->status_kamar === 'tersedia')
-                                <span class="badge-tersedia">Tersedia</span>
-                            @elseif($item->status_kamar === 'terisi')
-                                <span class="badge-terisi">Terisi</span>
-                            @else
-                                <span class="badge-nonaktif">Nonaktif</span>
-                            @endif
-                        </td>
-                        <td class="text-end">
-                            <button wire:click="openEdit({{ $item->kamar_id }})"
-                                    class="btn btn-sm btn-outline-secondary me-1">
-                                <i class="bi bi-pencil"></i>
-                            </button>
-                            <button wire:click="confirmDelete({{ $item->kamar_id }})"
-                                    class="btn btn-sm btn-outline-danger"
-                                    {{ $item->status_kamar === 'terisi' ? 'disabled' : '' }}>
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        </td>
-                    </tr>
+            {{-- ── Mobile: Card View ── --}}
+            <div class="card-view">
+                <div x-show="!ready" x-cloak>
+                    @for ($i = 0; $i < 4; $i++)
+                        <div class="item-card">
+                            <div class="item-card-header">
+                                <div class="skeleton skeleton-text" style="width:70px; height:16px;"></div>
+                                <div class="skeleton" style="width:70px; height:28px; border-radius:6px;"></div>
+                            </div>
+                            <div class="item-card-body">
+                                <div class="item-card-field">
+                                    <div class="skeleton skeleton-text" style="width:40px; margin-bottom:4px;"></div>
+                                    <div class="skeleton skeleton-text" style="width:90px;"></div>
+                                </div>
+                                <div class="item-card-field">
+                                    <div class="skeleton skeleton-text" style="width:40px; margin-bottom:4px;"></div>
+                                    <div class="skeleton skeleton-badge"></div>
+                                </div>
+                                <div class="item-card-field full-width">
+                                    <div class="skeleton skeleton-text" style="width:50px; margin-bottom:4px;"></div>
+                                    <div class="skeleton skeleton-text" style="width:140px;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    @endfor
+                </div>
+                <div x-show="ready" x-cloak>
+                    @forelse ($kamar as $item)
+                        <div class="item-card">
+                            <div class="item-card-header">
+                                <span class="item-card-title">{{ $item->nomor_kamar }}</span>
+                                <div class="item-card-actions">
+                                    <button
+                                        wire:click="openEdit({{ $item->kamar_id }})"
+                                        class="btn btn-sm btn-outline-secondary"
+                                    ><i class="bi bi-pencil"></i></button>
+                                    <button
+                                        @click="bukaPopupHapus({{ $item->kamar_id }}, '{{ addslashes('Kamar '.$item->nomor_kamar) }}')"
+                                        class="btn btn-sm btn-outline-danger"
+                                        {{ $item->status_kamar === 'terisi' ? 'disabled' : '' }}
+                                    ><i class="bi bi-trash"></i></button>
+                                </div>
+                            </div>
+                            <div class="item-card-body">
+                                <div class="item-card-field">
+                                    <div class="field-label">Tipe</div>
+                                    <div class="field-value">{{ $item->tipe_kamar }}</div>
+                                </div>
+                                <div class="item-card-field">
+                                    <div class="field-label">Status</div>
+                                    <div class="field-value">
+                                        @if ($item->status_kamar === 'tersedia')
+                                            <span class="badge-tersedia">Tersedia</span>
+                                        @elseif ($item->status_kamar === 'terisi')
+                                            <span class="badge-terisi">Terisi</span>
+                                        @else
+                                            <span class="badge-nonaktif">Nonaktif</span>
+                                        @endif
+                                    </div>
+                                </div>
+                                <div class="item-card-field">
+                                    <div class="field-label">Harga Sewa</div>
+                                    <div class="field-value">
+                                        Rp {{ number_format($item->harga_sewa, 0, ',', '.') }}/bln
+                                    </div>
+                                </div>
+                                <div class="item-card-field full-width">
+                                    <div class="field-label">Fasilitas</div>
+                                    <div class="field-value" style="font-size:12px;">
+                                        {{ $item->fasilitas ?? '-' }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     @empty
-                    <tr>
-                        <td colspan="6" class="text-center py-4 text-muted">
+                        <div class="text-center py-4 text-muted">
                             <i class="bi bi-inbox fs-4 d-block mb-2"></i>
                             Tidak ada data kamar ditemukan
-                        </td>
-                    </tr>
+                        </div>
                     @endforelse
-                </tbody>
-            </table>
+                    @include('components.admin.kamar._pagination', ['data' => $kamar])
+                </div>
+            </div>
 
-            {{-- Pagination desktop --}}
-            @include('components.admin.kamar._pagination', ['data' => $kamar])
-        </div>
+        </div>{{-- /table-card-wrapper --}}
+    </div>{{-- /view:table --}}
+
+    {{-- ════════════════════════════════════════════════════════════════
+         VIEW: SKELETON TRANSISI
+    ════════════════════════════════════════════════════════════════ --}}
+    <div
+        x-show="showSkeleton"
+        x-transition:enter="transition ease-out duration-150"
+        x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100"
+        x-transition:leave="transition ease-in duration-150"
+        x-transition:leave-end="opacity-0"
+        x-cloak
+    >
+        @include('components.admin.kamar._skeleton-form')
     </div>
 
-    {{-- ── MOBILE — Card view ── --}}
-    <div class="card-view">
-
-        {{-- Skeleton mobile --}}
-        <div x-show="!ready" x-cloak>
-            @for($i = 0; $i < 4; $i++)
-            <div class="item-card">
-                <div class="item-card-header">
-                    <div class="skeleton skeleton-text" style="width:70px; height:16px"></div>
-                    <div class="skeleton" style="width:70px; height:28px; border-radius:6px"></div>
-                </div>
-                <div class="item-card-body">
-                    <div class="item-card-field">
-                        <div class="skeleton skeleton-text" style="width:40px; margin-bottom:4px"></div>
-                        <div class="skeleton skeleton-text" style="width:90px"></div>
-                    </div>
-                    <div class="item-card-field">
-                        <div class="skeleton skeleton-text" style="width:40px; margin-bottom:4px"></div>
-                        <div class="skeleton skeleton-badge"></div>
-                    </div>
-                    <div class="item-card-field full-width">
-                        <div class="skeleton skeleton-text" style="width:50px; margin-bottom:4px"></div>
-                        <div class="skeleton skeleton-text" style="width:140px"></div>
-                    </div>
-                </div>
-            </div>
-            @endfor
-        </div>
-
-        {{-- Data cards mobile --}}
-        <div x-show="ready" x-cloak>
-            @forelse($kamar as $item)
-            <div class="item-card">
-                <div class="item-card-header">
-                    <span class="item-card-title">{{ $item->nomor_kamar }}</span>
-                    <div class="item-card-actions">
-                        <button wire:click="openEdit({{ $item->kamar_id }})"
-                                class="btn btn-sm btn-outline-secondary">
-                            <i class="bi bi-pencil"></i>
-                        </button>
-                        <button wire:click="confirmDelete({{ $item->kamar_id }})"
-                                class="btn btn-sm btn-outline-danger"
-                                {{ $item->status_kamar === 'terisi' ? 'disabled' : '' }}>
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="item-card-body">
-                    <div class="item-card-field">
-                        <div class="field-label">Tipe</div>
-                        <div class="field-value">{{ $item->tipe_kamar }}</div>
-                    </div>
-                    <div class="item-card-field">
-                        <div class="field-label">Status</div>
-                        <div class="field-value">
-                            @if($item->status_kamar === 'tersedia')
-                                <span class="badge-tersedia">Tersedia</span>
-                            @elseif($item->status_kamar === 'terisi')
-                                <span class="badge-terisi">Terisi</span>
-                            @else
-                                <span class="badge-nonaktif">Nonaktif</span>
-                            @endif
-                        </div>
-                    </div>
-                    <div class="item-card-field">
-                        <div class="field-label">Harga Sewa</div>
-                        <div class="field-value">
-                            Rp {{ number_format($item->harga_sewa, 0, ',', '.') }}/bln
-                        </div>
-                    </div>
-                    <div class="item-card-field">
-                        <div class="field-label">Fasilitas</div>
-                        <div class="field-value" style="font-size:12px">
-                            {{ $item->fasilitas ?? '-' }}
-                        </div>
-                    </div>
-                </div>
-            </div>
-            @empty
-            <div class="text-center py-4 text-muted">
-                <i class="bi bi-inbox fs-4 d-block mb-2"></i>
-                Tidak ada data kamar ditemukan
-            </div>
-            @endforelse
-
-            {{-- Pagination mobile --}}
-            @include('components.admin.kamar._pagination', ['data' => $kamar])
-        </div>
+    {{-- ════════════════════════════════════════════════════════════════
+         VIEW: FORM TAMBAH / EDIT
+    ════════════════════════════════════════════════════════════════ --}}
+    <div
+        x-show="$wire.activeView === 'form'"
+        x-transition:enter="transition ease-out duration-200"
+        x-transition:enter-start="opacity-0 translate-y-2"
+        x-transition:enter-end="opacity-100 translate-y-0"
+        x-cloak
+    >
+        @include('components.admin.kamar._modal-form')
     </div>
 
-    {{-- Modals --}}
-    @include('components.admin.kamar._modal-form')
+    {{-- ════════════════════════════════════════════════════════════════
+         POPUP HAPUS
+    ════════════════════════════════════════════════════════════════ --}}
     @include('components.admin.kamar._modal-delete')
-</div>
+
+    {{-- ════════════════════════════════════════════════════════════════
+         TOAST NOTIFICATION — pojok kanan bawah
+         Dipicu via $wire.on('toast') dari Livewire dispatch().
+
+         Fix: static style dan dynamic :style tidak bisa digabung —
+         Alpine `:style` akan override/replace `style` statis sepenuhnya.
+         Solusi: semua style statis masuk ke CSS class `.firabo-toast`,
+         dynamic hanya untuk warna (via x-bind:class).
+    ════════════════════════════════════════════════════════════════ --}}
+    <div
+        x-show="toast.show"
+        x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="opacity-0 translate-y-3"
+        x-transition:enter-end="opacity-100 translate-y-0"
+        x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-end="opacity-0 translate-y-3"
+        x-cloak
+        class="firabo-toast"
+        :class="toast.tipe === 'sukses' ? 'firabo-toast--sukses' : 'firabo-toast--gagal'"
+    >
+        <i
+            class="bi"
+            :class="toast.tipe === 'sukses' ? 'bi-check-circle-fill' : 'bi-x-circle-fill'"
+        ></i>
+        <span x-text="toast.pesan"></span>
+    </div>
+
+</div>{{-- /root --}}
+
+<style>
+.field-error { font-size: .8rem; color: #dc2626; }
+
+/* ── Toast ── */
+.firabo-toast {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    z-index: 2000;
+    display: inline-flex;        /* inline-flex: lebar fit content */
+    align-items: center;
+    gap: .5rem;
+    padding: .625rem 1rem;
+    border-radius: 10px;
+    font-size: .85rem;
+    font-weight: 500;
+    box-shadow: 0 4px 16px rgba(0,0,0,.12);
+    white-space: nowrap;         /* pastikan tidak wrap */
+    pointer-events: none;        /* tidak mengganggu klik di bawahnya */
+}
+
+.firabo-toast--sukses {
+    background: #fff;
+    color: #166534;
+    border: 1px solid #86efac;
+}
+
+.firabo-toast--sukses .bi { color: #16a34a; font-size: 1rem; }
+
+.firabo-toast--gagal {
+    background: #fff;
+    color: #991b1b;
+    border: 1px solid #fca5a5;
+}
+
+.firabo-toast--gagal .bi { color: #dc2626; font-size: 1rem; }
+</style>

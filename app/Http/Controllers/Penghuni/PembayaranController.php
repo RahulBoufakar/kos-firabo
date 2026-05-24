@@ -68,6 +68,41 @@ class PembayaranController extends Controller
         return view('penghuni.pembayaran.index', compact('pembayaran', 'hunian'));
     }
 
+    /**
+     * Invalidasi snap token yang expired/gagal.
+     *
+     * Dipanggil dari Snap.js onError handler via fetch() ketika Midtrans
+     * melaporkan token sudah expired atau transaksi gagal di sisi client.
+     *
+     * Yang dilakukan:
+     * 1. Cari record pending milik tagihan ini
+     * 2. Update statusnya ke 'gagal'
+     * 3. Return JSON sukses → client redirect ke halaman show (token baru akan digenerate)
+     *
+     * Kenapa return JSON bukan redirect?
+     * Karena dipanggil via fetch() dari JavaScript, bukan dari form submit biasa.
+     */
+    public function invalidateToken(Tagihan $tagihan): \Illuminate\Http\JsonResponse
+    {
+        // Pastikan tagihan ini milik penghuni yang sedang login
+        // Cek manual via hunian — tidak pakai Policy karena ini endpoint JSON
+        if ($tagihan->hunian->user_id !== Auth::id()) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+    
+        // Tandai semua record pending tagihan ini sebagai gagal
+        // Sehingga getOrCreateSnapToken() tidak akan mengembalikan token lama ini
+        Pembayaran::where('tagihan_id', $tagihan->tagihan_id)
+            ->where('status_pembayaran', 'pending')
+            ->update([
+                'status_pembayaran' => 'gagal',
+                'tanggal_bayar'     => null,
+            ]);
+    
+        return response()->json(['message' => 'Token invalidated']);
+    }
+
+
     // =========================================================================
     //  CALLBACK — Webhook Midtrans
     // =========================================================================

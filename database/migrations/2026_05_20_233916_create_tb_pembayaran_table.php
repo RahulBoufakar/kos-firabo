@@ -17,11 +17,12 @@ return new class extends Migration
             $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->string('metode_pembayaran', 50);
             $table->decimal('nominal_bayar', 10, 2);
-            $table->timestamp('tanggal_bayar');
+            $table->timestamp('tanggal_bayar')->nullable();
             $table->enum('status_pembayaran', ['sukses', 'gagal', 'pending'])->default('pending');
             $table->string('snap_token', 255)->nullable();
             $table->string('transaction_id', 100)->nullable();
-            $table->timestamp('created_at')->useCurrent();
+            $table->timestamp('created_at');                // when snap token was created / record inserted
+            $table->timestamp('updated_at')->nullable();    // when callback updated the status
         });
     }
 

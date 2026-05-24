@@ -95,7 +95,7 @@ class MidtransService
     private function buildSnapParams(Tagihan $tagihan): array
     {
         $hunian   = $tagihan->hunian;
-        $penghuni = $hunian->penghuni;
+        $penghuni = $hunian->user;
 
         return [
             'transaction_details' => [
@@ -103,7 +103,7 @@ class MidtransService
                 'gross_amount' => (int) $tagihan->nominal,
             ],
             'customer_details' => [
-                'first_name' => $penghuni->nama_lengkap,
+                'first_name' => $penghuni->name,
                 'email'      => $penghuni->email,
                 'phone'      => $penghuni->no_wa ?? '',
             ],
@@ -117,7 +117,12 @@ class MidtransService
                 ],
             ],
             'callbacks' => [
-                'finish' => route('penghuni.tagihan.index'),
+                // Midtrans akan redirect ke sini setelah popup ditutup.
+                // Mengarah ke show tagihan yang sama agar user tidak tersesat.
+                // ?from_midtrans=1 dipakai view untuk skip generate token ulang
+                // jika halaman diakses langsung (bukan dari redirect Midtrans).
+                'finish' => route('penghuni.tagihan.show', $tagihan->tagihan_id)
+                            . '?from_midtrans=1',
             ],
         ];
     }

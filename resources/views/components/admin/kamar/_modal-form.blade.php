@@ -1,90 +1,144 @@
-@if($showModal)
-<div class="modal-backdrop-custom" wire:click.self="$set('showModal', false)">
-    <div class="modal-box">
-        <div class="modal-box-header">
-            <h5 class="mb-0 fw-600">
+{{--
+    _modal-form.blade.php
+    Form tambah/edit kamar — ditampilkan sebagai VIEW: FORM
+    di dalam table.blade.php (bukan modal overlay).
+
+    Variabel yang tersedia dari Livewire parent:
+    $isEditing, $nomor_kamar, $tipe_kamar, $harga_sewa,
+    $fasilitas, $status_kamar
+--}}
+<div class="firabo-card">
+
+    {{-- Header --}}
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <div style="width:38px; height:38px; border-radius:9px;
+                    background:var(--firabo-primary-light); color:var(--firabo-primary);
+                    display:flex; align-items:center; justify-content:center;
+                    font-size:1.1rem; flex-shrink:0;">
+            <i class="bi {{ $isEditing ? 'bi-pencil-square' : 'bi-door-open-fill' }}"></i>
+        </div>
+        <div>
+            <h5 class="mb-0 fw-semibold" style="color: var(--firabo-primary-dark);">
                 {{ $isEditing ? 'Edit Kamar' : 'Tambah Kamar Baru' }}
             </h5>
-            <button wire:click="$set('showModal', false)" class="btn-close"></button>
+            <small class="text-muted">
+                {{ $isEditing ? 'Perbarui data kamar yang dipilih.' : 'Isi detail kamar baru.' }}
+            </small>
         </div>
+    </div>
 
-        <div class="modal-box-body">
-            <div class="row g-3">
-                <div class="col-md-6">
-                    <label class="form-label" style="font-size:14px; font-weight:500">
-                        Nomor Kamar
-                    </label>
-                    <input type="text" wire:model.live="nomor_kamar"
-                           class="firabo-input" placeholder="A-101">
-                    @error('nomor_kamar')
-                        <div class="text-danger mt-1" style="font-size:12px">{{ $message }}</div>
-                    @enderror
+    <form wire:submit="save">
+        <div class="row g-3">
+
+            {{-- Nomor Kamar --}}
+            <div class="col-md-6">
+                <label class="form-label-firabo">
+                    Nomor Kamar <span class="text-danger">*</span>
+                </label>
+                <input
+                    class="firabo-input @error('nomor_kamar') is-invalid @enderror"
+                    type="text"
+                    wire:model.live="nomor_kamar"
+                    placeholder="Contoh: A01"
+                >
+                @error('nomor_kamar')
+                    <div class="field-error mt-1">
+                        <i class="bi bi-exclamation-circle me-1"></i>{{ $message }}
+                    </div>
+                @enderror
+            </div>
+
+            {{-- Tipe Kamar --}}
+            <div class="col-md-6">
+                <label class="form-label-firabo">
+                    Tipe Kamar <span class="text-danger">*</span>
+                </label>
+                <input
+                    class="firabo-input @error('tipe_kamar') is-invalid @enderror"
+                    type="text"
+                    wire:model.live="tipe_kamar"
+                    placeholder="Contoh: Standar, Deluxe, VIP"
+                >
+                @error('tipe_kamar')
+                    <div class="field-error mt-1">
+                        <i class="bi bi-exclamation-circle me-1"></i>{{ $message }}
+                    </div>
+                @enderror
+            </div>
+
+            {{-- Harga Sewa --}}
+            <div class="col-md-6">
+                <label class="form-label-firabo">
+                    Harga Sewa / Bulan <span class="text-danger">*</span>
+                </label>
+                <div class="input-icon-wrap">
+                    <i class="bi bi-cash-stack"></i>
+                    <input
+                        class="firabo-input @error('harga_sewa') is-invalid @enderror"
+                        type="number"
+                        wire:model.live="harga_sewa"
+                        placeholder="800000"
+                        min="0"
+                    >
                 </div>
+                @error('harga_sewa')
+                    <div class="field-error mt-1">
+                        <i class="bi bi-exclamation-circle me-1"></i>{{ $message }}
+                    </div>
+                @enderror
+            </div>
 
+            {{-- Status — hanya tampil saat edit --}}
+            @if ($isEditing)
                 <div class="col-md-6">
-                    <label class="form-label" style="font-size:14px; font-weight:500">
-                        Tipe Kamar
-                    </label>
-                    <input type="text" wire:model.live="tipe_kamar"
-                           class="firabo-input" placeholder="Standard AC">
-                    @error('tipe_kamar')
-                        <div class="text-danger mt-1" style="font-size:12px">{{ $message }}</div>
-                    @enderror
-                </div>
-
-                <div class="col-md-6">
-                    <label class="form-label" style="font-size:14px; font-weight:500">
-                        Harga Sewa/Bulan
-                    </label>
-                    <input type="number" wire:model.live="harga_sewa"
-                           class="firabo-input" placeholder="1500000">
-                    @error('harga_sewa')
-                        <div class="text-danger mt-1" style="font-size:12px">{{ $message }}</div>
-                    @enderror
-                </div>
-
-                <div class="col-md-6">
-                    <label class="form-label" style="font-size:14px; font-weight:500">
-                        Status
-                    </label>
-                    <select wire:model.live="status_kamar" class="firabo-input">
+                    <label class="form-label-firabo">Status Kamar</label>
+                    <select class="firabo-input" wire:model.live="status_kamar">
                         <option value="tersedia">Tersedia</option>
                         <option value="terisi">Terisi</option>
                         <option value="nonaktif">Nonaktif</option>
                     </select>
-                    @error('status_kamar')
-                        <div class="text-danger mt-1" style="font-size:12px">{{ $message }}</div>
-                    @enderror
                 </div>
+            @endif
 
-                <div class="col-12">
-                    <label class="form-label" style="font-size:14px; font-weight:500">
-                        Fasilitas
-                    </label>
-                    <textarea wire:model.live="fasilitas" class="firabo-input"
-                              rows="3" placeholder="AC, WiFi, Kamar Mandi Dalam..."></textarea>
-                    @error('fasilitas')
-                        <div class="text-danger mt-1" style="font-size:12px">{{ $message }}</div>
-                    @enderror
-                </div>
+            {{-- Fasilitas --}}
+            <div class="col-12">
+                <label class="form-label-firabo">Fasilitas</label>
+                <textarea
+                    class="firabo-input"
+                    wire:model.live="fasilitas"
+                    rows="3"
+                    placeholder="Contoh: Kasur, lemari, AC, kamar mandi dalam..."
+                    style="resize: vertical;"
+                ></textarea>
             </div>
+
         </div>
 
-        <div class="modal-box-footer">
-            <button wire:click="$set('showModal', false)" class="btn-firabo-outline me-2">
-                Batal
+        {{-- Footer --}}
+        <div class="d-flex gap-2 justify-content-end mt-4">
+            <button
+                type="button"
+                class="btn-firabo-outline"
+                wire:click="cancelForm"
+            >
+                <i class="bi bi-arrow-left me-1"></i> Batal
             </button>
-            <button wire:click="save" wire:loading.attr="disabled" class="btn-firabo">
+            <button
+                type="submit"
+                class="btn-firabo"
+                wire:loading.attr="disabled"
+                wire:target="save"
+            >
                 <span wire:loading.remove wire:target="save">
                     <i class="bi bi-check-lg me-1"></i>
                     {{ $isEditing ? 'Simpan Perubahan' : 'Tambah Kamar' }}
                 </span>
                 <span wire:loading wire:target="save">
-                    <div class="spinner-border spinner-border-sm me-1" role="status"></div>
+                    <span class="spinner-border spinner-border-sm me-1"></span>
                     Menyimpan...
                 </span>
             </button>
         </div>
-    </div>
+    </form>
+
 </div>
-@endif

@@ -69,6 +69,12 @@ Route::prefix('penghuni')
             ->name('pembayaran.callback')
             ->withoutMiddleware(['auth', 'role:penghuni']);
 
+        // Invalidasi snap token expired — dipanggil via fetch() dari Snap.js onError
+        Route::post('/pembayaran/{tagihan}/invalidate-token', [
+                Penghuni\PembayaranController::class,
+                'invalidateToken',])
+            ->name('pembayaran.invalidate-token');
+
         Route::get('/profil', [Penghuni\ProfilController::class, 'edit'])
             ->name('profil.edit');
         Route::patch('/profil', [Penghuni\ProfilController::class, 'update'])

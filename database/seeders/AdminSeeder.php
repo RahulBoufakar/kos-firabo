@@ -8,18 +8,21 @@ use Illuminate\Support\Facades\Hash;
 
 class AdminSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        User::create([
-            'name'       => 'Admin Firabo',
-            'email'      => 'admin@firabo.com',
-            'no_wa'      => '08123456789',
-            'role'       => 'admin',
-            'status_akun'=> 'aktif',
-            'password'   => Hash::make('admin123'),
-        ]);
+        // Gunakan firstOrCreate agar seeder aman dijalankan berulang kali
+        // tanpa membuat duplikat akun admin
+        User::firstOrCreate(
+            ['email' => 'admin@firabo.test'],
+            [
+                'name' => 'Administrator Firabo',
+                'no_wa'        => '081234567000',
+                'password'     => Hash::make('admin123'),
+                'role'         => 'admin',
+                'status_akun'  => 'aktif',
+            ]
+        );
+ 
+        $this->command->info('  ✓ AdminSeeder: admin@firabo.test (password: admin123)');
     }
 }
