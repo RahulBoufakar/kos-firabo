@@ -707,7 +707,7 @@ new class extends Component {
     </div>
 
 </div>{{-- /root --}}
-
+@push('styles')
 <style>
 .firabo-toast {
     position: fixed;
@@ -730,3 +730,4 @@ new class extends Component {
 .firabo-toast--gagal  { background:#fff; color:#991b1b; border:1px solid #fca5a5; }
 .firabo-toast--gagal  .bi { color:#dc2626; font-size:1rem; }
 </style>
+@endpush

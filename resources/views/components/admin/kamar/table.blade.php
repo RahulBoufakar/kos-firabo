@@ -438,9 +438,11 @@ new class extends Component {
 
 </div>{{-- /root --}}
 
+@push('styles')
 <style>
 .field-error { font-size: .8rem; color: #dc2626; }
 
+    
 /* ── Toast ── */
 .firabo-toast {
     position: fixed;
@@ -475,3 +477,4 @@ new class extends Component {
 
 .firabo-toast--gagal .bi { color: #dc2626; font-size: 1rem; }
 </style>
+@endpush

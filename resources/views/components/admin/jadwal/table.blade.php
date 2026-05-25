@@ -361,8 +361,9 @@ new class extends Component {
 
 </div>{{-- /root --}}
 
+@push('styles')    
 <style>
-/* ── Toast ── */
+    /* ── Toast ── */
 .firabo-toast {
     position: fixed;
     bottom: 1.5rem;
@@ -407,3 +408,4 @@ new class extends Component {
     outline: none;
 }
 </style>
+@endpush
