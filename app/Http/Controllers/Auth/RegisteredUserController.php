@@ -12,85 +12,76 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
-use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class RegisteredUserController extends Controller
 {
-     /**
+    /**
      * Tampilkan form registrasi publik.
-     * Kirim daftar kamar yang berstatus 'tersedia' ke view.
+     * Kirim daftar kamar berstatus 'tersedia' ke view.
      */
     public function create(): View
     {
         $kamarTersedia = Kamar::where('status_kamar', 'tersedia')
             ->orderBy('nomor_kamar')
             ->get(['kamar_id', 'nomor_kamar', 'tipe_kamar', 'harga_sewa']);
- 
+
         return view('auth.register', compact('kamarTersedia'));
     }
- 
+
     /**
-     * Proses registrasi penghuni baru dari form publik.
+     * Proses registrasi penghuni baru.
      *
-     * Validasi mencakup:
-     * - Field standar Breeze (nama, email, password)
-     * - Field tambahan: no_wa, kamar_id
-     * - Kamar wajib berstatus 'tersedia' saat submit (race-condition guard)
-     *
-     * Setelah user dibuat, fire dua event:
-     * 1. Registered (Laravel built-in) — untuk email verification jika dipakai
-     * 2. PenghuniTerdaftar (custom) — untuk auto-create hunian + jadwal tagihan
+     * Fix:
+     * - 'name' (bukan 'nama_lengkap') — sesuai kolom tabel users
+     * - $kamarTersedia (bukan $kamars) — konsisten dengan controller
+     * - Hapus field tanggal_masuk / tanggal_generate / tanggal_jatuh_tempo
+     *   dari validasi — field itu ada di view lama, tapi tidak dipakai.
+     *   Jadwal dibuat oleh listener BuatHunianDanJadwalTagihan dengan default.
      */
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
-            'nama_lengkap' => ['required', 'string', 'max:100'],
-            'email'        => ['required', 'string', 'lowercase', 'email', 'max:100', 'unique:users,email'],
-            'no_wa'        => ['required', 'string', 'max:20', 'regex:/^[0-9+\-\s]+$/'],
-            'kamar_id'     => ['required', 'integer', 'exists:tb_kamar,kamar_id'],
-            'password'     => ['required', 'confirmed', Rules\Password::defaults()],
+            'name'     => ['required', 'string', 'max:100'],
+            'email'    => ['required', 'string', 'lowercase', 'email', 'max:100', 'unique:users,email'],
+            'no_wa'    => ['required', 'string', 'max:20', 'regex:/^[0-9+\-\s]+$/'],
+            'kamar_id' => ['required', 'integer', 'exists:tb_kamar,kamar_id'],
+            'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ], [
-            'nama_lengkap.required' => 'Nama lengkap wajib diisi.',
-            'email.unique'          => 'Email sudah digunakan, gunakan email lain.',
-            'no_wa.required'        => 'Nomor WhatsApp wajib diisi.',
-            'no_wa.regex'           => 'Format nomor WhatsApp tidak valid.',
-            'kamar_id.required'     => 'Silakan pilih kamar.',
-            'kamar_id.exists'       => 'Kamar yang dipilih tidak ditemukan.',
-            'password.confirmed'    => 'Konfirmasi password tidak cocok.',
+            'name.required'      => 'Nama lengkap wajib diisi.',
+            'email.unique'       => 'Email sudah digunakan, gunakan email lain.',
+            'no_wa.required'     => 'Nomor WhatsApp wajib diisi.',
+            'no_wa.regex'        => 'Format nomor WhatsApp tidak valid.',
+            'kamar_id.required'  => 'Silakan pilih kamar.',
+            'kamar_id.exists'    => 'Kamar yang dipilih tidak ditemukan.',
+            'password.confirmed' => 'Konfirmasi password tidak cocok.',
         ]);
- 
-        // Guard: pastikan kamar masih tersedia saat submit
-        // (mencegah race condition jika dua orang mendaftar bersamaan)
+
+        // Guard race-condition: kamar harus masih tersedia saat submit
         $kamar = Kamar::where('kamar_id', $request->kamar_id)
             ->where('status_kamar', 'tersedia')
             ->first();
- 
+
         if (! $kamar) {
             return back()
                 ->withInput()
                 ->withErrors(['kamar_id' => 'Kamar yang Anda pilih sudah tidak tersedia. Silakan pilih kamar lain.']);
         }
- 
-        // Buat user baru dengan role penghuni
+
         $user = User::create([
-            'nama_lengkap' => $request->nama_lengkap,
-            'email'        => $request->email,
-            'no_wa'        => $request->no_wa,
-            'password'     => Hash::make($request->password),
-            'role'         => 'penghuni',
-            'status_akun'  => 'aktif',
+            'name'        => $request->name,        // FIX: dulu 'nama_lengkap'
+            'email'       => $request->email,
+            'no_wa'       => $request->no_wa,
+            'password'    => Hash::make($request->password),
+            'role'        => 'penghuni',
+            'status_akun' => 'aktif',
         ]);
- 
-        // Fire event Registered bawaan Laravel (untuk email verification)
+
         event(new Registered($user));
- 
-        // Fire event custom → listener akan buat hunian + jadwal tagihan
         event(new PenghuniTerdaftar($user, $kamar));
- 
-        // Login otomatis setelah register
+
         Auth::login($user);
- 
+
         return redirect()->route('penghuni.dashboard');
     }
 }

@@ -246,7 +246,7 @@ new class extends Component {
             <div x-show="ready" x-cloak>
                 @forelse ($tagihan as $t)
                     @php
-                        $penghuni    = $t->hunian?->penghuni;
+                        $penghuni    = $t->hunian?->user;
                         $kamar       = $t->hunian?->kamar;
                         $sisaHari    = \Carbon\Carbon::today()->diffInDays($t->tanggal_jatuh_tempo, false);
                         $isTerlambat = $t->status_tagihan === 'terlambat';
