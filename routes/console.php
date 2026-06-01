@@ -55,3 +55,4 @@ Schedule::command('tagihan:update-terlambat')
     ->withoutOverlapping()
     ->runInBackground()
     ->appendOutputTo(storage_path('logs/tagihan-terlambat.log'));
+

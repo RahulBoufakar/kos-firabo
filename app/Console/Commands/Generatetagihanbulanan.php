@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Events\TagihanDibuat;
 use App\Models\JadwalTagihan;
 use App\Models\Tagihan;
 use Carbon\Carbon;
@@ -20,7 +21,10 @@ use Illuminate\Console\Command;
  *   php artisan tagihan:generate
  *   php artisan tagihan:generate --tanggal=2025-05-01   ← simulasi tanggal tertentu
  *   php artisan tagihan:generate --dry-run              ← preview tanpa simpan ke DB
- */
+ * 
+ * - Setelah Tagihan::create() berhasil, fire event TagihanDibuat
+ * - Listener KirimNotifikasiTagihanBaru akan mengirim email ke penghuni
+*/
 class GenerateTagihanBulanan extends Command
 {
     /**
@@ -123,7 +127,7 @@ class GenerateTagihanBulanan extends Command
  
             if (! $isDryRun) {
                 try {
-                    Tagihan::create([
+                     $tagihan = Tagihan::create([
                         'hunian_id'           => $hunian->hunian_id,
                         'jadwal_id'           => $jadwal->jadwal_id,
                         'nominal'             => $nominal,
@@ -133,6 +137,12 @@ class GenerateTagihanBulanan extends Command
                     ]);
  
                     $totalDibuat++;
+
+                    // ── NEW: Fire event → listener kirim email notifikasi ──
+                    // Error pada pengiriman email tidak boleh membatalkan
+                    // proses generate — listener sudah handle exception sendiri.
+                    event(new TagihanDibuat($tagihan));
+                    
                 } catch (\Exception $e) {
                     $this->error(
                         "  ERROR Kamar {$kamar->nomor_kamar}: " . $e->getMessage()
