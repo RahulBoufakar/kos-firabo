@@ -346,6 +346,22 @@ body {
     &::placeholder { color: #9ca3af; }
 }
 
+// Label standar untuk semua form di aplikasi
+.form-label-firabo {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 6px;
+}
+
+// Pesan error di bawah field form
+.field-error {
+    font-size: 0.8rem;
+    color: #dc2626;
+    margin-top: 4px;
+}
+
 .input-icon-wrap {
     position: relative;
 
@@ -388,6 +404,62 @@ body {
             box-shadow: 0 0 0 3px rgba(45,122,86,0.12);
             outline: none;
         }
+    }
+}
+
+// ── Filter Select ──────────────────────────────────────
+// Digunakan di toolbar semua tabel admin (kamar, penghuni, tagihan, jadwal, pembayaran)
+.filter-select {
+    height: 38px;
+    border: 1.5px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #374151;
+    background-color: #fff;
+    padding: 0 0.875rem;
+    cursor: pointer;
+    transition: border-color 0.15s, box-shadow 0.15s;
+
+    &:focus {
+        outline: none;
+        border-color: var(--firabo-primary);
+        box-shadow: 0 0 0 3px rgba(45,122,86,0.12);
+    }
+}
+
+// ── Toast Notification ─────────────────────────────────
+// Digunakan di semua komponen Livewire dan halaman profil.
+// Dikontrol via Alpine x-data: toast = { show, pesan, tipe }
+.firabo-toast {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    z-index: 2000;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1rem;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    white-space: nowrap;
+    pointer-events: none;
+
+    &--sukses {
+        background: #fff;
+        color: #166534;
+        border: 1px solid #86efac;
+
+        .bi { color: #16a34a; font-size: 1rem; }
+    }
+
+    &--gagal {
+        background: #fff;
+        color: #991b1b;
+        border: 1px solid #fca5a5;
+
+        .bi { color: #dc2626; font-size: 1rem; }
     }
 }
 
@@ -514,103 +586,7 @@ body {
     }
 }
 
-.table-card-wrapper {
-    container-type: inline-size;
-    container-name: tableWrapper;
-}
-
-// Di bawah 650px konten → card view
-@container tableWrapper (max-width: 650px) {
-    .table-view { display: none; }
-    .card-view  { display: block; }
-}
-
-// Di atas 650px konten → table view
-@container tableWrapper (min-width: 651px) {
-    .table-view { display: block; }
-    .card-view  { display: none; }
-}
-
-// ── Mobile ─────────────────────────────────────────────
-@media (max-width: 768px) {
-    .sidebar {
-        display: none;  // sidebar desktop hidden di mobile
-    }
-
-    .main-wrapper {
-        margin-left: 0;
-
-        .topbar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background: var(--firabo-primary-dark);
-            padding: 0.75rem 1rem;
-            color: #fff;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-
-            .topbar-brand {
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                font-weight: 700;
-                font-size: 16px;
-                color: #fff;
-                text-decoration: none;
-
-                i { font-size: 20px; }
-            }
-
-            .topbar-user {
-                display: flex;
-                align-items: center;
-                gap: 6px;
-                font-size: 13px;
-                color: rgba(255,255,255,0.85);
-            }
-        }
-
-        .main-content {
-            padding: 1.25rem 1rem 6rem; // bottom padding for bottom nav
-        }
-    }
-
-    .bottom-nav {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        background: #fff;
-        border-top: 1px solid #e5e7eb;
-        display: flex;
-        z-index: 1000;
-        padding-bottom: env(safe-area-inset-bottom);
-
-        .bottom-nav-item {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 8px 4px;
-            text-decoration: none;
-            color: #9ca3af;
-            font-size: 10px;
-            gap: 2px;
-            transition: color 0.15s;
-
-            i { font-size: 20px; }
-
-            &.active {
-                color: var(--firabo-primary);
-                font-weight: 500;
-            }
-        }
-    }
-    
-}
-
+// ── Item Card (Mobile Card View) ───────────────────────
 .item-card {
     background: #fff;
     border: 1px solid var(--firabo-border);
@@ -659,6 +635,101 @@ body {
 
         &.full-width {
             grid-column: 1 / -1;
+        }
+    }
+}
+
+// ── Responsive Container Query (Table ↔ Card) ──────────
+.table-card-wrapper {
+    container-type: inline-size;
+    container-name: tableWrapper;
+}
+
+@container tableWrapper (max-width: 650px) {
+    .table-view { display: none; }
+    .card-view  { display: block; }
+}
+
+@container tableWrapper (min-width: 651px) {
+    .table-view { display: block; }
+    .card-view  { display: none; }
+}
+
+// ── Mobile ─────────────────────────────────────────────
+@media (max-width: 768px) {
+    .sidebar {
+        display: none;
+    }
+
+    .main-wrapper {
+        margin-left: 0;
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--firabo-primary-dark);
+            padding: 0.75rem 1rem;
+            color: #fff;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+
+            .topbar-brand {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                font-weight: 700;
+                font-size: 16px;
+                color: #fff;
+                text-decoration: none;
+
+                i { font-size: 20px; }
+            }
+
+            .topbar-user {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                font-size: 13px;
+                color: rgba(255,255,255,0.85);
+            }
+        }
+
+        .main-content {
+            padding: 1.25rem 1rem 6rem;
+        }
+    }
+
+    .bottom-nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: #fff;
+        border-top: 1px solid #e5e7eb;
+        display: flex;
+        z-index: 1000;
+        padding-bottom: env(safe-area-inset-bottom);
+
+        .bottom-nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px 4px;
+            text-decoration: none;
+            color: #9ca3af;
+            font-size: 10px;
+            gap: 2px;
+            transition: color 0.15s;
+
+            i { font-size: 20px; }
+
+            &.active {
+                color: var(--firabo-primary);
+                font-weight: 500;
+            }
         }
     }
 }
