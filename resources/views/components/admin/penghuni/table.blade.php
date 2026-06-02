@@ -707,27 +707,3 @@ new class extends Component {
     </div>
 
 </div>{{-- /root --}}
-@push('styles')
-<style>
-.firabo-toast {
-    position: fixed;
-    bottom: 1.5rem;
-    right: 1.5rem;
-    z-index: 2000;
-    display: inline-flex;
-    align-items: center;
-    gap: .5rem;
-    padding: .625rem 1rem;
-    border-radius: 10px;
-    font-size: .85rem;
-    font-weight: 500;
-    box-shadow: 0 4px 16px rgba(0,0,0,.12);
-    white-space: nowrap;
-    pointer-events: none;
-}
-.firabo-toast--sukses { background:#fff; color:#166534; border:1px solid #86efac; }
-.firabo-toast--sukses .bi { color:#16a34a; font-size:1rem; }
-.firabo-toast--gagal  { background:#fff; color:#991b1b; border:1px solid #fca5a5; }
-.firabo-toast--gagal  .bi { color:#dc2626; font-size:1rem; }
-</style>
-@endpush
