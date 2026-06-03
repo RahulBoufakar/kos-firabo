@@ -39,7 +39,6 @@ Schedule::command('tagihan:generate')
     ->dailyAt('00:05')
     ->withoutOverlapping()   // Cegah dua instance berjalan bersamaan
     ->runInBackground()      // Tidak memblokir scheduler untuk job lain
-    ->name('Generate Tagihan Bulanan') // Nama untuk memudahkan identifikasi di schedule:list
     ->appendOutputTo(storage_path('logs/tagihan-generate.log')); //hasil log untuk debugging
  
 // ── 2. Update Status Terlambat ─────────────────────────────────────────────
@@ -56,3 +55,4 @@ Schedule::command('tagihan:update-terlambat')
     ->withoutOverlapping()
     ->runInBackground()
     ->appendOutputTo(storage_path('logs/tagihan-terlambat.log'));
+

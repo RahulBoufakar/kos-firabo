@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Penghuni;
 
+use App\Events\PembayaranBerhasil;
 use App\Http\Controllers\Controller;
 use App\Models\Pembayaran;
 use App\Models\Tagihan;
@@ -229,6 +230,13 @@ class PembayaranController extends Controller
             ]);
         }
 
+        // ── NEW: Fire event jika pembayaran sukses → kirim email konfirmasi ──
+        // Reload pembayaran agar relasi tersedia untuk listener & Mailable
+        if ($statusPembayaran === 'sukses') {
+            $pembayaran->refresh();
+            event(new PembayaranBerhasil($pembayaran));
+        }
+        
         return response('OK', 200);
     }
 

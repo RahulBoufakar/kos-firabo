@@ -5,6 +5,7 @@ use App\Models\Tagihan;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Illuminate\Support\Facades\Auth;
+use App\Events\PembayaranBerhasil;
 
 new class extends Component {
     use WithPagination;
@@ -66,7 +67,7 @@ new class extends Component {
         $tagihan = Tagihan::findOrFail($this->tagihan_id);
         $status = $this->status_pembayaran;
 
-        Pembayaran::create([
+        $pembayaran = Pembayaran::create([
             'tagihan_id'        => $this->tagihan_id,
             'user_id'           => Auth::id(),
             'metode_pembayaran' => $this->metode_pembayaran,
@@ -77,6 +78,12 @@ new class extends Component {
 
         if ($status === 'sukses') {
             $tagihan->update(['status_tagihan' => 'lunas']);
+
+            // ── NEW: Fire event → listener kirim email konfirmasi ke penghuni ──
+            // Ini memberi transparansi: penghuni dapat notifikasi
+            // bahwa admin telah mencatat pembayaran atas nama mereka.
+            $pembayaran->refresh();
+            event(new PembayaranBerhasil($pembayaran));
         }
 
         $this->isFormOpen = false;
