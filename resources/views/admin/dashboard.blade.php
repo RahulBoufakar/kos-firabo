@@ -24,15 +24,17 @@
     <div class="col-6 col-lg">
         <div class="stat-card">
             <div class="stat-value">{{ $stats['tagihan_belum'] }}</div>
-            <div class="stat-label">Tagihan Belum Lunas</div>
+            <div class="stat-label" style="font-size:0.785rem;">Tagihan Belum Lunas</div>
         </div>
     </div>
     <div class="col-6 col-lg">
         <div class="stat-card">
-            <div class="stat-value">
-                {{ $stats['pemasukan'] >= 1000000
-                    ? number_format($stats['pemasukan'] / 1000000, 0) . 'M'
-                    : number_format($stats['pemasukan'], 0, ',', '.') }}
+            <div class="stat-value" style="font-size: {{ $stats['pemasukan'] >= 1000000000 ? '1.5rem' : ($stats['pemasukan'] >= 1000000 ? '1.75rem' : '2rem') }}">
+                {{ $stats['pemasukan'] >= 1000000000
+                    ? 'Rp ' . number_format($stats['pemasukan'] / 1000000000, 2, ',', '.') . ' M'
+                    : ($stats['pemasukan'] >= 1000000
+                        ? 'Rp ' . number_format($stats['pemasukan'] / 1000000, 1, ',', '.') . ' Jt'
+                        : 'Rp ' . number_format($stats['pemasukan'], 0, ',', '.')) }}
             </div>
             <div class="stat-label">Pemasukan (Rp)</div>
         </div>

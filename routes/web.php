@@ -16,6 +16,10 @@ Route::get('/', function(){
     return redirect()->route('login');
 });
 
+Route::get('/contact', function () {
+    return view('contact');
+})->name('contact');
+
 // Auth routes (Breeze)
 require __DIR__.'/auth.php';
 

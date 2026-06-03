@@ -44,7 +44,12 @@
             <div class="tagihan-countdown">
                 <i class="bi bi-clock"></i>
                 @php
-                    $sisaHari = now()->diffInDays($tagihanAktif->tanggal_jatuh_tempo, false);
+                    $sisaHari = now()->diffInRealDays($tagihanAktif->tanggal_jatuh_tempo, false);
+                    // Jika sisaHari positif, berarti masih ada waktu sebelum jatuh tempo
+                    // Jika sisaHari negatif, berarti sudah melewati jatuh tempo
+                    $sisaHari = $sisaHari >= 0
+                        ? (int) ceil($sisaHari)
+                        : -(int) ceil(abs($sisaHari));
                 @endphp
                 @if($sisaHari > 0)
                     {{ $sisaHari }} Hari Lagi

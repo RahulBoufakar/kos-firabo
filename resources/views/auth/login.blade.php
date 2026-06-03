@@ -60,6 +60,16 @@
         </p>
     </form>
 
+    {{-- Link Hubungi Kami --}}
+    <div class="text-center mt-3">
+        <a href="{{ route('contact') }}"
+           style="font-size:12px; color:#9ca3af; text-decoration:none; display:inline-flex; align-items:center; gap:4px; transition:color 0.15s;"
+           onmouseover="this.style.color='var(--firabo-primary)'"
+           onmouseout="this.style.color='#9ca3af'">
+            <i class="bi bi-headset"></i> Butuh bantuan? Hubungi Kami
+        </a>
+    </div>
+
     <p class="text-center mt-3 mb-0" style="font-size:12px; color:#9ca3af">
         <i class="bi bi-shield-check me-1"></i>Sistem Manajemen Aman & Terenkripsi
     </p>
