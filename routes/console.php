@@ -56,3 +56,17 @@ Schedule::command('tagihan:update-terlambat')
     ->runInBackground()
     ->appendOutputTo(storage_path('logs/tagihan-terlambat.log'));
 
+// ── 3. Kirim Reminder Jatuh Tempo ────────────────────────────────────────
+//
+// Dijalankan setiap hari pukul 08:00, setelah penghuni kemungkinan sudah bangun
+// dan siap menerima informasi tagihan yang akan jatuh tempo besok.
+//
+// Logic di dalam command:
+//   - Cari tagihan dengan status 'belum_bayar' + jatuh tempo == besok
+//   - Fire event TagihanJatuhTempo untuk setiap tagihan → listener
+//     akan kirim email reminder ke penghuni terkait
+Schedule::command('tagihan:reminder')
+    ->dailyAt('08:00')
+    ->withoutOverlapping()
+    ->runInBackground()
+    ->appendOutputTo(storage_path('logs/tagihan-reminder.log'));
