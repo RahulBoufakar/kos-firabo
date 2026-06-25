@@ -39,8 +39,9 @@ class DatabaseSeeder extends Seeder
         ]);
  
         $this->command->info('');
-        $this->command->info('  Selesai! Ringkasan akun untuk testing:');
+        $this->command->info('  Selesai! Berhasil me-generate 30 Kamar dan 20 Penghuni Aktif beserta riwayatnya.');
         $this->command->info('');
+        
         $this->command->table(
             ['Role', 'Email', 'Password', 'Keterangan'],
             [

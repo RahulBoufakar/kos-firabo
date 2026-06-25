@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Kamar;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Faker\Factory as Faker;
 
 /**
  * KamarSeeder
@@ -19,74 +20,27 @@ class KamarSeeder extends Seeder
 {
     public function run(): void
     {
-        $kamar = [
-            // ── Tersedia (bisa dipilih saat register) ──
-            [
-                'nomor_kamar'  => 'A01',
-                'tipe_kamar'   => 'Standar',
-                'harga_sewa'   => 800_000,
-                'fasilitas'    => 'Kasur, lemari, kipas angin, kamar mandi dalam',
+        
+        $faker = Faker::create('id_ID');
+        
+        $this->command->info('  -> Men-generate 30 data kamar dummy...');
+        // Buat 30 kamar dummy
+        for ($i = 1; $i <= 30; $i++) {
+            $tipe = $faker->randomElement(['Standar', 'Eksklusif', 'VIP']);
+            $harga = match($tipe) {
+                'Standar' => 600000,
+                'Eksklusif' => 1000000,
+                'VIP' => 1500000,
+            };
+
+            Kamar::create([
+                'nomor_kamar'  => $faker->unique()->bothify('?-##'), // Contoh: A-01, B-12
+                'tipe_kamar'   => $tipe,
+                'harga_sewa'   => $harga,
+                'fasilitas'    => $faker->sentence(4),
                 'status_kamar' => 'tersedia',
-            ],
-            [
-                'nomor_kamar'  => 'A02',
-                'tipe_kamar'   => 'Standar',
-                'harga_sewa'   => 800_000,
-                'fasilitas'    => 'Kasur, lemari, kipas angin, kamar mandi dalam',
-                'status_kamar' => 'tersedia',
-            ],
-            [
-                'nomor_kamar'  => 'B01',
-                'tipe_kamar'   => 'Deluxe',
-                'harga_sewa'   => 1_200_000,
-                'fasilitas'    => 'Kasur, lemari, AC, TV, kamar mandi dalam, balkon',
-                'status_kamar' => 'tersedia',
-            ],
-            [
-                'nomor_kamar'  => 'B02',
-                'tipe_kamar'   => 'Deluxe',
-                'harga_sewa'   => 1_200_000,
-                'fasilitas'    => 'Kasur, lemari, AC, TV, kamar mandi dalam, balkon',
-                'status_kamar' => 'tersedia',
-            ],
-            [
-                'nomor_kamar'  => 'C01',
-                'tipe_kamar'   => 'VIP',
-                'harga_sewa'   => 1_800_000,
-                'fasilitas'    => 'Kasur spring bed, lemari besar, AC, TV 32", dapur kecil, kamar mandi dalam',
-                'status_kamar' => 'tersedia',
-            ],
- 
-            // ── Terisi (akan dihuni oleh seeder penghuni) ──
-            [
-                'nomor_kamar'  => 'A03',
-                'tipe_kamar'   => 'Standar',
-                'harga_sewa'   => 800_000,
-                'fasilitas'    => 'Kasur, lemari, kipas angin, kamar mandi dalam',
-                'status_kamar' => 'terisi',
-            ],
-            [
-                'nomor_kamar'  => 'B03',
-                'tipe_kamar'   => 'Deluxe',
-                'harga_sewa'   => 1_200_000,
-                'fasilitas'    => 'Kasur, lemari, AC, TV, kamar mandi dalam, balkon',
-                'status_kamar' => 'terisi',
-            ],
- 
-            // ── Nonaktif (untuk memastikan tidak muncul di selector) ──
-            [
-                'nomor_kamar'  => 'C02',
-                'tipe_kamar'   => 'VIP',
-                'harga_sewa'   => 1_800_000,
-                'fasilitas'    => 'Dalam renovasi',
-                'status_kamar' => 'nonaktif',
-            ],
-        ];
- 
-        foreach ($kamar as $data) {
-            Kamar::create($data);
+            ]);
         }
- 
-        $this->command->info('  ✓ KamarSeeder: 8 kamar dibuat (5 tersedia, 2 terisi, 1 nonaktif)');
+        $this->command->info('  ✓ Sukses membuat data kamar.');
     }
 }
