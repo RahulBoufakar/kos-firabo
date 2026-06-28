@@ -50,11 +50,21 @@ new class extends Component {
             'tanggal_jatuh_tempo' => 'required|integer|min:1|max:30',
             'status_jadwal'       => 'required|in:aktif,nonaktif',
         ], [
-            'tanggal_generate.min'    => 'Minimal tanggal 1.',
-            'tanggal_generate.max'    => 'Maksimal tanggal 28 (aman untuk Februari).',
-            'tanggal_jatuh_tempo.min' => 'Minimal 1 hari.',
-            'tanggal_jatuh_tempo.max' => 'Maksimal 30 hari.',
-            'status_jadwal.in'        => 'Status jadwal tidak valid.',
+            // Aturan untuk Tanggal Generate
+            'tanggal_generate.required'    => 'Tanggal generate wajib diisi.',
+            'tanggal_generate.integer'     => 'Tanggal generate harus berupa angka bulat.',
+            'tanggal_generate.min'         => 'Minimal tanggal 1.',
+            'tanggal_generate.max'         => 'Maksimal tanggal 28 (aman untuk Februari).',
+
+            // Aturan untuk Tanggal Jatuh Tempo (Durasi dalam hari)
+            'tanggal_jatuh_tempo.required' => 'Durasi jatuh tempo wajib diisi.',
+            'tanggal_jatuh_tempo.integer'  => 'Durasi jatuh tempo harus berupa angka bulat.',
+            'tanggal_jatuh_tempo.min'      => 'Minimal 1 hari.',
+            'tanggal_jatuh_tempo.max'      => 'Maksimal 30 hari.',
+
+            // Aturan untuk Status Jadwal
+            'status_jadwal.required'       => 'Status jadwal wajib dipilih.',
+            'status_jadwal.in'             => 'Status jadwal tidak valid.',
         ]);
 
         JadwalTagihan::findOrFail($this->editingId)->update([

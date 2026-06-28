@@ -53,6 +53,34 @@ new class extends Component {
         ];
     }
 
+    protected function messages(): array
+    {
+        return [
+            // Validasi Nama
+            'name.required' => 'Nama penghuni wajib diisi.',
+            'name.string'   => 'Format nama tidak valid.',
+            'name.max'      => 'Nama penghuni maksimal terdiri dari 100 karakter.',
+
+            // Validasi Email
+            'email.required' => 'Email wajib diisi.',
+            'email.email'    => 'Format email tidak valid (contoh: nama@email.com).',
+            'email.unique'   => 'Email ini sudah digunakan oleh penghuni lain.',
+
+            // Validasi Nomor WhatsApp
+            'no_wa.required' => 'Nomor WhatsApp wajib diisi.',
+            'no_wa.string'   => 'Format nomor WhatsApp tidak valid.',
+            'no_wa.max'      => 'Nomor WhatsApp maksimal 20 karakter.',
+
+            // Validasi Password
+            'password.required' => 'Password wajib diisi saat menambahkan penghuni baru.',
+            'password.min'      => 'Password minimal harus 6 karakter.',
+
+            // Validasi Kamar
+            'kamar_id.required' => 'Kamar wajib dipilih.',
+            'kamar_id.exists'   => 'Data kamar yang dipilih tidak ditemukan atau tidak valid.',
+        ];
+    }
+
     public function updatingSearch(): void       { $this->resetPage(); }
     public function updatingFilterStatus(): void { $this->resetPage(); }
 

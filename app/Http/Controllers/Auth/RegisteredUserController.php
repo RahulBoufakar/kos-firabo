@@ -30,14 +30,22 @@ class RegisteredUserController extends Controller
     }
 
     /**
-     * Proses registrasi penghuni baru.
+     * Menangani proses registrasi penghuni baru.
      *
-     * Fix:
-     * - 'name' (bukan 'nama_lengkap') — sesuai kolom tabel users
-     * - $kamarTersedia (bukan $kamars) — konsisten dengan controller
-     * - Hapus field tanggal_masuk / tanggal_generate / tanggal_jatuh_tempo
-     *   dari validasi — field itu ada di view lama, tapi tidak dipakai.
-     *   Jadwal dibuat oleh listener BuatHunianDanJadwalTagihan dengan default.
+     * Penjelasan khusus:
+     * - Melakukan validasi input (name, email, no_wa, kamar_id, password) dan
+     *   mengembalikan pesan error kustom jika gagal.
+     * - Memastikan kamar yang dipilih masih berstatus 'tersedia' untuk
+     *   mencegah race condition sebelum membuat user.
+     * - Jika valid, membuat record User dengan role 'penghuni' dan status_akun
+     *   'aktif', lalu memicu event Registered dan event PenghuniTerdaftar
+     *   (yang bertanggung jawab membuat hunian & jadwal tagihan secara terpisah).
+     * - Melakukan login otomatis untuk user yang baru dibuat dan mengarahkan
+     *   ke route penghuni.dashboard.
+     *
+     * Catatan: field terkait tanggal (tanggal_masuk / tanggal_generate /
+     * tanggal_jatuh_tempo) tidak divalidasi di sini karena dijadwalkan oleh
+     * listener terkait.
      */
     public function store(Request $request): RedirectResponse
     {
@@ -48,13 +56,18 @@ class RegisteredUserController extends Controller
             'kamar_id' => ['required', 'integer', 'exists:tb_kamar,kamar_id'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ], [
+            // Bagian ini akan menggantikan {{ $message }} di file Blade Anda
             'name.required'      => 'Nama lengkap wajib diisi.',
-            'email.unique'       => 'Email sudah digunakan, gunakan email lain.',
+            'email.required'     => 'Alamat email wajib diisi.',
+            'email.email'        => 'Format email tidak valid (contoh: nama@email.com).',
+            'email.unique'       => 'Email ini sudah terdaftar. Silakan gunakan email lain.',
             'no_wa.required'     => 'Nomor WhatsApp wajib diisi.',
-            'no_wa.regex'        => 'Format nomor WhatsApp tidak valid.',
-            'kamar_id.required'  => 'Silakan pilih kamar.',
-            'kamar_id.exists'    => 'Kamar yang dipilih tidak ditemukan.',
+            'no_wa.numeric'      => 'Nomor WhatsApp harus berupa angka.',
+            'password.required'  => 'Password wajib diisi.',
+            'password.min'       => 'Password harus memiliki minimal 8 karakter.',
             'password.confirmed' => 'Konfirmasi password tidak cocok.',
+            'kamar_id.required'  => 'Anda harus memilih kamar yang tersedia.',
+            'kamar_id.exists'    => 'Kamar yang dipilih tidak valid atau tidak tersedia.',
         ]);
 
         // Guard race-condition: kamar harus masih tersedia saat submit

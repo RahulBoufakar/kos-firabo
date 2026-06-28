@@ -29,6 +29,25 @@ new class extends Component {
         'metode_pembayaran' => 'required|string',
     ];
 
+    protected $messages = [
+        // Validasi ID Tagihan
+        'tagihan_id.required'        => 'Tagihan wajib dipilih.',
+        'tagihan_id.exists'          => 'Data tagihan yang dipilih tidak ditemukan atau tidak valid.',
+
+        // Validasi Nominal Bayar
+        'nominal_bayar.required'     => 'Nominal pembayaran wajib diisi.',
+        'nominal_bayar.numeric'      => 'Nominal pembayaran harus berupa angka.',
+        'nominal_bayar.min'          => 'Nominal pembayaran minimal adalah 1.',
+
+        // Validasi Tanggal Bayar
+        'tanggal_bayar.required'     => 'Tanggal pembayaran wajib diisi.',
+        'tanggal_bayar.date'         => 'Format tanggal pembayaran tidak valid.',
+
+        // Validasi Metode Pembayaran
+        'metode_pembayaran.required' => 'Metode pembayaran wajib dipilih.',
+        'metode_pembayaran.string'   => 'Format metode pembayaran tidak valid.',
+    ];
+
     public function updatingSearch(): void { $this->resetPage(); }
     public function updatingFilterStatus(): void { $this->resetPage(); }
 

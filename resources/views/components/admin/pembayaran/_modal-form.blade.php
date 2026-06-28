@@ -15,6 +15,7 @@
                     <option value="{{ $t->tagihan_id }}">
                         {{ $t->hunian->user->name ?? '-' }} —
                         Kamar {{ $t->hunian->kamar->nomor_kamar ?? '-' }} —
+                        {{ $t->tanggal_tagihan->translatedFormat('F Y') }} —
                         Rp {{ number_format($t->nominal, 0, ',', '.') }}
                     </option>
                 @endforeach

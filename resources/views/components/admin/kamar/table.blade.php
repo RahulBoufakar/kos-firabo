@@ -71,8 +71,28 @@ new class extends Component {
             'fasilitas'    => 'nullable|string',
             'status_kamar' => 'required|in:tersedia,terisi,nonaktif',
         ], [
-            'nomor_kamar.unique' => 'Nomor kamar sudah digunakan.',
-            'harga_sewa.numeric' => 'Harga sewa harus berupa angka.',
+            // Validasi Nomor Kamar
+            'nomor_kamar.required' => 'Nomor kamar wajib diisi.',
+            'nomor_kamar.string'   => 'Format nomor kamar tidak valid.',
+            'nomor_kamar.max'      => 'Nomor kamar maksimal terdiri dari 10 karakter.',
+            'nomor_kamar.unique'   => 'Nomor kamar sudah digunakan. Silakan gunakan nomor lain.',
+
+            // Validasi Tipe Kamar
+            'tipe_kamar.required'  => 'Tipe kamar wajib diisi.',
+            'tipe_kamar.string'    => 'Format tipe kamar tidak valid.',
+            'tipe_kamar.max'       => 'Tipe kamar maksimal terdiri dari 50 karakter.',
+
+            // Validasi Harga Sewa
+            'harga_sewa.required'  => 'Harga sewa wajib diisi.',
+            'harga_sewa.numeric'   => 'Harga sewa harus berupa angka.',
+            'harga_sewa.min'       => 'Harga sewa tidak boleh kurang dari 0.',
+
+            // Validasi Fasilitas (Opsional)
+            'fasilitas.string'     => 'Format teks fasilitas tidak valid.',
+
+            // Validasi Status Kamar
+            'status_kamar.required'=> 'Status kamar wajib dipilih.',
+            'status_kamar.in'      => 'Pilihan status kamar tidak valid.',
         ]);
 
         if ($this->isEditing) {

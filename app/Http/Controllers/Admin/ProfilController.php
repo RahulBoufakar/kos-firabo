@@ -35,6 +35,15 @@ class ProfilController extends Controller
         $request->validate([
             'name'  => ['required', 'string', 'max:100'],
             'no_wa' => ['nullable', 'string', 'max:20'],
+        ], [
+            // Validasi Nama
+            'name.required' => 'Nama admin wajib diisi.',
+            'name.string'   => 'Format nama tidak valid.',
+            'name.max'      => 'Nama maksimal terdiri dari 100 karakter.',
+
+            // Validasi Nomor WhatsApp
+            'no_wa.string'  => 'Format nomor WhatsApp tidak valid.',
+            'no_wa.max'     => 'Nomor WhatsApp maksimal 20 karakter.',
         ]);
 
         $user->update($request->only('name', 'no_wa'));
@@ -47,6 +56,11 @@ class ProfilController extends Controller
         $request->validate([
             'current_password' => ['required'],
             'password'         => ['required', 'confirmed', Password::min(8)],
+        ], [
+            'current_password.required' => 'Password saat ini wajib diisi.',
+            'password.required'         => 'Password baru wajib diisi.',
+            'password.confirmed'        => 'Konfirmasi password tidak sesuai.',
+            'password.min'              => 'Password baru minimal harus 8 karakter.',
         ]);
 
         if (! Hash::check($request->current_password, $user->password)) {

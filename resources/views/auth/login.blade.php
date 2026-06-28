@@ -21,7 +21,9 @@
                        class="firabo-input" placeholder="admin@kosfirabo.com" required autofocus>
             </div>
             @error('email')
-                <div class="text-danger mt-1" style="font-size:12px">{{ $message }}</div>
+                <div class="text-danger mt-1" style="font-size:12px">
+                    {{ $message === 'The email field is required.' ? 'Email harus diisi.' : ($message === 'The email must be a valid email address.' ? 'Email harus berupa alamat email yang valid.' : ($message === 'These credentials do not match our records.' ? 'Email atau kata sandi salah.' : $message)) }}
+                </div>
             @enderror
         </div>
 
@@ -33,7 +35,9 @@
                        class="firabo-input" placeholder="••••••••" required>
             </div>
             @error('password')
-                <div class="text-danger mt-1" style="font-size:12px">{{ $message }}</div>
+                <div class="text-danger mt-1" style="font-size:12px">
+                    {{ $message === 'The password field is required.' ? 'Kata sandi harus diisi.' : ($message === 'The password must be at least 8 characters.' ? 'Kata sandi minimal 8 karakter.' : $message) }}
+                </div>
             @enderror
         </div>
 
