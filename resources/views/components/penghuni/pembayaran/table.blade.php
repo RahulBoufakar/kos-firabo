@@ -142,9 +142,16 @@ new class extends Component {
 
         {{-- Real Data Cards --}}
         <div x-show="ready" x-cloak class="row g-3">
+            {{-- Real Data Cards --}}
+        <div class="row g-3">
             @forelse($pembayaran as $item)
-                <div class="col-12 col-md-6 col-xl-4">
-                    <div class="item-card h-100 shadow-sm border-0 {{ strtolower(trim($item->status_pembayaran)) === 'pending' ? 'border border-warning' : '' }}">
+                <div class="col-12 col-md-6 col-xl-4" wire:key="card-{{ $item->pembayaran_id }}">
+                    {{-- PERBAIKAN DI SINI: Tambahkan atribut data-bs dan cursor: pointer --}}
+                    <div class="item-card h-100 shadow-sm border-0 {{ strtolower(trim($item->status_pembayaran)) === 'pending' ? 'border border-warning' : '' }}" 
+                         data-bs-toggle="modal" 
+                         data-bs-target="#modalDetail-{{ $item->pembayaran_id }}"
+                         style="cursor: pointer;">
+                        
                         <div class="item-card-header align-items-center">
                             <span class="item-card-title mb-0" style="font-size:17px; font-weight:700;">
                                 Rp {{ number_format($item->nominal_bayar, 0, ',', '.') }}
@@ -154,7 +161,6 @@ new class extends Component {
                             @if($status === 'sukses')
                                 <span class="badge-sukses px-3 py-2 rounded-pill">Sukses</span>
                             @elseif($status === 'pending')
-                                {{-- Badge Pending dengan animasi berdenyut (Pulse) --}}
                                 <span class="badge-pending px-3 py-2 rounded-pill d-inline-flex align-items-center">
                                     <span class="spinner-grow spinner-grow-sm me-2 opacity-75" style="width: 10px; height: 10px;" role="status"></span>
                                     Menunggu
@@ -163,6 +169,7 @@ new class extends Component {
                                 <span class="badge-nonaktif px-3 py-2 rounded-pill">Gagal</span>
                             @endif
                         </div>
+                        
                         <div class="item-card-body mt-2">
                             <div class="d-flex w-100">
                                 <div class="item-card-field mb-0 pe-3">
@@ -191,6 +198,12 @@ new class extends Component {
                     </div>
                 </div>
             @endforelse
+        </div>
+        
+        {{-- PERBAIKAN DI SINI: Render semua modal di luar grid --}}
+        @foreach($pembayaran as $item)
+            @include('components.penghuni.pembayaran._modal_detail', ['item' => $item])
+        @endforeach
         </div>
 
         {{-- Pagination --}}

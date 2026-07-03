@@ -33,9 +33,11 @@ class DatabaseSeeder extends Seeder
         $this->command->info('  ============================');
  
         $this->call([
-            AdminSeeder::class,    // 1. Admin dulu sebelum data lain
-            KamarSeeder::class,    // 2. Kamar sebelum penghuni (FK kamar_id)
-            PenghuniSeeder::class, // 3. Penghuni + hunian + jadwal + tagihan
+            AdminSeeder::class,
+            KamarSeeder::class,
+            PenghuniSeeder::class,
+            JadwalTagihanSeeder::class,
+            TagihanDanPembayaranSeeder::class,
         ]);
  
         $this->command->info('');
@@ -46,8 +48,9 @@ class DatabaseSeeder extends Seeder
             ['Role', 'Email', 'Password', 'Keterangan'],
             [
                 ['Admin',    'admin@firabo.test',     'admin123',    'Akses penuh panel admin'],
-                ['Penghuni', 'penghuni1@firabo.test', 'password123', 'Kamar A03 — ada tagihan belum bayar'],
-                ['Penghuni', 'penghuni2@firabo.test', 'password123', 'Kamar B03 — ada tagihan terlambat'],
+                ['Penghuni', 'penghuni1@firabo.test', 'password123', 'Kamar A01 — ada tagihan belum bayar'],
+                ['Penghuni', 'penghuni2@firabo.test', 'password123', 'Kamar B01 — ada tagihan terlambat'],
+                ['Penghuni', 'penghuni3@firabo.test', 'password123', 'Kamar C01 — ada tagihan lunas'],
             ]
         );
         $this->command->info('');
