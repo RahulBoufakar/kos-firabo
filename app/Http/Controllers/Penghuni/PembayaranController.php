@@ -125,13 +125,10 @@ class PembayaranController extends Controller
      */
     public function callback(Request $request): Response
     {
-        // Konfigurasi Midtrans SDK untuk proses verifikasi signature key
-        // yang dikirim Midtrans di setiap notifikasi
+        // Konfigurasi Midtrans SDK
         Config::$serverKey    = config('services.midtrans.server_key');
         Config::$isProduction = config('services.midtrans.is_production', false);
 
-        // Parse notifikasi — SDK akan throw Exception jika signature tidak valid
-        // (misalnya request bukan dari Midtrans atau data dimanipulasi)
         try {
             $notif = new Notification();
         } catch (\Exception $e) {
@@ -139,36 +136,44 @@ class PembayaranController extends Controller
                 'error' => $e->getMessage(),
                 'body'  => $request->all(),
             ]);
-            // 400 hanya untuk request yang jelas-jelas tidak valid / bukan dari Midtrans
             return response('Bad Request', 400);
         }
 
-        // Ambil field-field penting dari notifikasi Midtrans
-        $orderId           = $notif->order_id;           // format: FIRABO-{tagihan_id}-{timestamp}
-        $transactionStatus = $notif->transaction_status; // capture | settlement | pending | deny | cancel | expire
-        $fraudStatus       = $notif->fraud_status ?? null; // accept | deny | challenge (khusus kartu kredit)
-        $paymentType       = $notif->payment_type;       // gopay | qris | bank_transfer | credit_card | dll
-        $grossAmount       = $notif->gross_amount;       // nominal transaksi dari Midtrans
+        // 1. FALLBACK KE $request UNTUK MENGHINDARI ANOMALI REDIRECT
+        // Ambil data langsung dari $request JSON jika SDK memberikan data yang tertukar
+        $orderId           = $request->order_id ?? $notif->order_id;
+        $transactionId     = $request->transaction_id ?? $notif->transaction_id;
+        $transactionStatus = $request->transaction_status ?? $notif->transaction_status;
+        $fraudStatus       = $request->fraud_status ?? $notif->fraud_status ?? null;
+        $paymentType       = $request->payment_type ?? $notif->payment_type;
+        $grossAmount       = $request->gross_amount ?? $notif->gross_amount;
+
+        // 2. CEK ANOMALI TRANSAKSI
+        // Jika order_id malah berisi karakter acak tanpa tanda '-', kembalikan respons OK 
+        // agar Midtrans tidak terus melakukan retry pada request redirect yang cacat ini.
+        // Webhook asli (POST) dari Midtrans nantinya akan memiliki format yang benar.
+        if (!str_contains($orderId, '-')) {
+            Log::warning('[Midtrans Callback] Anomali Payload: order_id terdeteksi sebagai transaction_id. Mengabaikan request (kemungkinan dari GET Redirect).', compact('orderId', 'transactionId'));
+            return response('OK', 200); 
+        }
 
         Log::info('[Midtrans Callback] Notifikasi diterima', [
             'order_id'           => $orderId,
+            'transaction_id'     => $transactionId,
             'transaction_status' => $transactionStatus,
             'fraud_status'       => $fraudStatus,
             'payment_type'       => $paymentType,
         ]);
 
         // Ekstrak tagihan_id dari order_id
-        // order_id format: FIRABO-{tagihan_id}-{unix_timestamp}
-        // contoh: FIRABO-42-1717200000 → parts[1] = '42'
         $parts     = explode('-', $orderId);
         $tagihanId = $parts[1] ?? null;
 
         if (! $tagihanId) {
             Log::error('[Midtrans Callback] Format order_id tidak dikenali', compact('orderId'));
-            return response('OK', 200); // tetap 200 agar tidak di-retry
+            return response('OK', 200);
         }
 
-        // Cari tagihan di database — jika tidak ketemu, log dan keluar
         $tagihan = Tagihan::find($tagihanId);
 
         if (! $tagihan) {
@@ -176,52 +181,42 @@ class PembayaranController extends Controller
             return response('OK', 200);
         }
 
-        // Resolusi status: mapping dari status Midtrans ke status internal sistem
+        // Resolusi status
         [$statusPembayaran, $statusTagihan] = $this->resolveStatus(
             $transactionStatus,
             $fraudStatus
         );
 
-        // Cari record pembayaran yang statusnya masih pending untuk tagihan ini
-        // Record ini dibuat terlebih dahulu oleh MidtransService::getOrCreateSnapToken()
-        // saat penghuni membuka halaman detail tagihan
         $pembayaran = Pembayaran::where('tagihan_id', $tagihanId)
             ->where('status_pembayaran', 'pending')
             ->latest()
             ->first();
 
         if ($pembayaran) {
-            // Update record pending yang sudah ada
             $pembayaran->update([
                 'metode_pembayaran' => $paymentType ?? 'online',
                 'nominal_bayar'     => $grossAmount,
-                // tanggal_bayar hanya diisi jika transaksi benar-benar sukses
                 'tanggal_bayar'     => $statusPembayaran === 'sukses' ? Carbon::now() : null,
                 'status_pembayaran' => $statusPembayaran,
-                'transaction_id'    => $orderId,
+                'transaction_id'    => $transactionId, // PERBAIKAN BUG MAPPING: Gunakan $transactionId
             ]);
         } else {
-            // Fallback: buat record baru
-            // Terjadi jika: callback datang tanpa ada record pending sebelumnya
-            // (misalnya token dibuat di luar sistem, atau record terhapus)
             Log::warning('[Midtrans Callback] Tidak ada record pending, membuat record baru', [
                 'tagihan_id' => $tagihanId,
             ]);
 
             Pembayaran::create([
                 'tagihan_id'        => $tagihanId,
-                'user_id'           => null, // null = transaksi online, bukan pencatatan manual admin
+                'user_id'           => null,
                 'metode_pembayaran' => $paymentType ?? 'online',
                 'nominal_bayar'     => $grossAmount,
                 'tanggal_bayar'     => $statusPembayaran === 'sukses' ? Carbon::now() : null,
                 'status_pembayaran' => $statusPembayaran,
                 'snap_token'        => null,
-                'transaction_id'    => $orderId,
+                'transaction_id'    => $transactionId, // PERBAIKAN BUG MAPPING: Gunakan $transactionId
             ]);
         }
 
-        // Update status tagihan — hanya dilakukan jika resolveStatus()
-        // mengembalikan nilai (tidak null), yaitu hanya saat sukses
         if ($statusTagihan) {
             $tagihan->update(['status_tagihan' => $statusTagihan]);
 
@@ -230,8 +225,6 @@ class PembayaranController extends Controller
             ]);
         }
 
-        // ── NEW: Fire event jika pembayaran sukses → kirim email konfirmasi ──
-        // Reload pembayaran agar relasi tersedia untuk listener & Mailable
         if ($statusPembayaran === 'sukses') {
             $pembayaran->refresh();
             event(new PembayaranBerhasil($pembayaran));
