@@ -10,7 +10,9 @@ use App\Listeners\BuatHunianDanJadwalTagihan;
 use App\Listeners\KirimNotifikasiJatuhTempo;
 use App\Listeners\KirimNotifikasiPembayaranBerhasil;
 use App\Listeners\KirimNotifikasiTagihanBaru;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
@@ -32,6 +34,13 @@ class AppServiceProvider extends ServiceProvider
         //Mengaktifkan URL HTTPS secara global untuk test di ngrok.
         // URL::forceScheme('https');
 
+
+        //Rate limiting untuk job kirim email tagihan baru
+        RateLimiter::for('email-tagihan', function ($job) {
+            return Limit::perSecond(1, 3);
+            // artinya: maksimal 1 job diloloskan setiap 3 detik
+        });
+        
         // // ── 1. Penghuni terdaftar → buat hunian + jadwal tagihan ──────────────
         // Event::listen(
         //     PenghuniTerdaftar::class,

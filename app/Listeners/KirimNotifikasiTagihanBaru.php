@@ -35,7 +35,7 @@ class KirimNotifikasiTagihanBaru
         }
 
         try {
-            Mail::send(new NotifikasiTagihanBaru($tagihan));
+            Mail::to($penghuni->email)->queue(new NotifikasiTagihanBaru($tagihan));
 
             Log::info('[Email] Notifikasi tagihan baru terkirim', [
                 'tagihan_id' => $tagihan->tagihan_id,

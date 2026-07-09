@@ -31,7 +31,8 @@ class KirimNotifikasiJatuhTempo
         }
 
         try {
-            Mail::send(new NotifikasiJatuhTempo($tagihan));
+            Mail::to($penghuni->email)->queue(new NotifikasiJatuhTempo($tagihan));
+            //Mail::send(new NotifikasiJatuhTempo($tagihan));
 
             Log::info('[Email] Reminder jatuh tempo terkirim', [
                 'tagihan_id' => $tagihan->tagihan_id,

@@ -7,6 +7,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
+use Illuminate\Queue\Middleware\RateLimited;
 use Illuminate\Queue\SerializesModels;
 
 /**
@@ -26,6 +27,11 @@ class NotifikasiPembayaranBerhasil extends Mailable
     public function __construct(
         public readonly Pembayaran $pembayaran,
     ) {}
+
+    public function middleware(): array
+    {
+        return [new RateLimited('email-tagihan')];
+    }
 
     public function envelope(): Envelope
     {
