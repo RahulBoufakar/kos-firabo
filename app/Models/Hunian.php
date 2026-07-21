@@ -45,4 +45,15 @@ class Hunian extends Model
     {
         return $this->hasMany(Tagihan::class, 'hunian_id', 'hunian_id');
     }
+
+    /**
+     * Total nominal tagihan yang belum lunas (belum_bayar + terlambat) dari hunian ini.
+     * Dipakai untuk deteksi "piutang macet" saat penghuni dinonaktifkan/kabur.
+     */
+    public function totalBelumLunas(): float
+    {
+        return (float) $this->tagihan()
+            ->whereIn('status_tagihan', ['belum_bayar', 'terlambat'])
+            ->sum('nominal');
+    }
 }

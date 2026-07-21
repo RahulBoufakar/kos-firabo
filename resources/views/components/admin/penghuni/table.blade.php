@@ -259,18 +259,19 @@ new class extends Component {
     public function delete(int $id): void
     {
         $user   = User::findOrFail($id);
-        
-        // Ambil hunian beserta jadwal tagihannya
+
         $hunian = $user->hunian()
             ->where('status_hunian', 'aktif')
-            ->with('jadwalTagihan') // Pastikan relasi ini ada di model Hunian
+            ->with('jadwalTagihan')
             ->first();
+
+        $piutang = $hunian?->totalBelumLunas() ?? 0;
 
         if ($hunian) {
             // 1. Kosongkan kamar
             Kamar::where('kamar_id', $hunian->kamar_id)
                  ->update(['status_kamar' => 'tersedia']);
-            
+
             // 2. Selesaikan masa hunian
             $hunian->update([
                 'status_hunian'  => 'selesai',
@@ -281,13 +282,30 @@ new class extends Component {
             if ($hunian->jadwalTagihan) {
                 $hunian->jadwalTagihan->update(['status_jadwal' => 'nonaktif']);
             }
+
+            // 4. Kalau masih ada tagihan belum lunas, konversi statusnya jadi 'piutang' —
+            //    dipisahkan secara eksplisit dari tagihan operasional penghuni aktif.
+            //    HARUS dijalankan SEBELUM $piutang dipakai untuk apapun yang bergantung
+            //    pada status belum_bayar/terlambat, tapi di sini $piutang sudah dihitung
+            //    duluan di atas, jadi urutannya aman.
+            if ($piutang > 0) {
+                Tagihan::where('hunian_id', $hunian->hunian_id)
+                    ->belumLunas()
+                    ->update(['status_tagihan' => 'piutang']);
+            }
         }
 
-        // 4. Nonaktifkan user (Riwayat tagihan tetap aman di database)
-        $user->update(['status_akun' => 'nonaktif']);
-        
+        // 5. Tandai status akun
+        $statusBaru = $piutang > 0 ? 'kabur' : 'nonaktif';
+        $user->update(['status_akun' => $statusBaru]);
+
         $this->resetPage();
-        $this->dispatch('toast', pesan: 'Penghuni berhasil dinonaktifkan. Data tagihan tetap disimpan sebagai riwayat.', tipe: 'sukses');
+
+        $pesan = $piutang > 0
+            ? 'Penghuni ditandai KABUR. Piutang Rp ' . number_format($piutang, 0, ',', '.') . ' diubah statusnya menjadi Piutang.'
+            : 'Penghuni berhasil dinonaktifkan. Data tagihan tetap disimpan sebagai riwayat.';
+
+        $this->dispatch('toast', pesan: $pesan, tipe: $piutang > 0 ? 'gagal' : 'sukses');
     }
 
     // ── Reaktivasi ─────────────────────────────────────────────────────────
@@ -420,7 +438,7 @@ new class extends Component {
 <div
     x-data="{
         showSkeleton: false,
-        deletePopup: { show: false, id: null, nama: '' },
+        deletePopup: { show: false, id: null, nama: '', piutang: 0 },
         toast: { show: false, pesan: '', tipe: 'sukses' },
 
         mulaiSkeleton() {
@@ -435,11 +453,11 @@ new class extends Component {
                 }
             }, 700);
         },
-        bukaPopupHapus(id, nama) {
-            this.deletePopup = { show: true, id, nama };
+        bukaPopupHapus(id, nama, piutang = 0) {
+            this.deletePopup = { show: true, id, nama, piutang };
         },
         tutupPopupHapus() {
-            this.deletePopup = { show: false, id: null, nama: '' };
+            this.deletePopup = { show: false, id: null, nama: '', piutang: 0 };
         },
         konfirmasiHapus() {
             $wire.delete(this.deletePopup.id);
@@ -488,6 +506,7 @@ new class extends Component {
                     <option value="">Semua Status</option>
                     <option value="aktif">Aktif</option>
                     <option value="nonaktif">Nonaktif</option>
+                    <option value="kabur">Kabur (Piutang)</option>
                 </select>
             </div>
             <button wire:click="openCreate" class="btn-firabo">
@@ -525,7 +544,10 @@ new class extends Component {
                                     <td style="font-size:13px; color:#6b7280">{{ $user->email }}</td>
                                     <td style="font-size:13px">{{ $user->no_wa ?? '-' }}</td>
                                     <td>
-                                        @php $hunian = $user->hunian->first(); @endphp
+                                        @php
+                                            $hunian  = $user->hunian->first();
+                                            $piutang = $hunian?->totalBelumLunas() ?? 0;
+                                        @endphp
                                         @if($hunian)
                                             <span style="color:var(--firabo-primary); font-weight:500">
                                                 {{ $hunian->kamar->nomor_kamar ?? '-' }}
@@ -537,6 +559,8 @@ new class extends Component {
                                     <td>
                                         @if($user->status_akun === 'aktif')
                                             <span class="badge-tersedia">Aktif</span>
+                                        @elseif($user->status_akun === 'kabur')
+                                            <span class="badge-kabur">Kabur</span>
                                         @else
                                             <span class="badge-nonaktif">Nonaktif</span>
                                         @endif
@@ -549,7 +573,7 @@ new class extends Component {
                                                 title="Edit"
                                             ><i class="bi bi-pencil"></i></button>
                                             <button
-                                                @click="bukaPopupHapus({{ $user->id }}, '{{ addslashes($user->name) }}')"
+                                                @click="bukaPopupHapus({{ $user->id }}, '{{ addslashes($user->name) }}', {{ $piutang }})"
                                                 class="btn btn-sm btn-outline-danger"
                                                 title="Nonaktifkan"
                                             ><i class="bi bi-person-x"></i></button>
@@ -608,7 +632,10 @@ new class extends Component {
                 </div>
                 <div x-show="ready" x-cloak>
                     @forelse($penghuniList as $user)
-                        @php $hunian = $user->hunian->first(); @endphp
+                        @php
+                            $hunian  = $user->hunian->first();
+                            $piutang = $hunian?->totalBelumLunas() ?? 0;
+                        @endphp
                         <div class="item-card">
                             <div class="item-card-header">
                                 <span class="item-card-title">{{ $user->name }}</span>
@@ -619,7 +646,7 @@ new class extends Component {
                                             class="btn btn-sm btn-outline-secondary"
                                         ><i class="bi bi-pencil"></i></button>
                                         <button
-                                            @click="bukaPopupHapus({{ $user->id }}, '{{ addslashes($user->name) }}')"
+                                            @click="bukaPopupHapus({{ $user->id }}, '{{ addslashes($user->name) }}', {{ $piutang }})"
                                             class="btn btn-sm btn-outline-danger"
                                         ><i class="bi bi-person-x"></i></button>
                                     @else
@@ -642,6 +669,8 @@ new class extends Component {
                                     <div class="field-value">
                                         @if($user->status_akun === 'aktif')
                                             <span class="badge-tersedia">Aktif</span>
+                                        @elseif($user->status_akun === 'kabur')
+                                            <span class="badge-kabur">Kabur</span>
                                         @else
                                             <span class="badge-nonaktif">Nonaktif</span>
                                         @endif

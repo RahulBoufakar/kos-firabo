@@ -50,8 +50,8 @@
             </div>
 
             {{-- Judul --}}
-            <div style="font-weight:600; font-size:1rem; color:#1e293b; margin-bottom:.5rem;">
-                Nonaktifkan Penghuni?
+            <div style="font-weight:600; font-size:1rem; color:#1e293b; margin-bottom:.5rem;"
+                 x-text="deletePopup.piutang > 0 ? 'Tandai Penghuni Kabur?' : 'Nonaktifkan Penghuni?'">
             </div>
 
             {{-- Deskripsi --}}
@@ -62,9 +62,33 @@
                 font-weight:600; font-size:.9rem; color:#1e293b;
                 margin-bottom:.75rem;
             " x-text="deletePopup.nama"></div>
-            <div style="font-size:.82rem; color:#94a3b8; margin-bottom:1.5rem; line-height:1.5;">
+            <div style="font-size:.82rem; color:#94a3b8; margin-bottom:1rem; line-height:1.5;">
                 Kamar akan dikembalikan ke status <strong>tersedia</strong> dan
                 hunian akan ditandai selesai. Akun penghuni tidak akan dihapus.
+            </div>
+
+            {{-- Peringatan piutang — hanya muncul jika masih ada tagihan belum lunas --}}
+            <div
+                x-show="deletePopup.piutang > 0"
+                x-cloak
+                style="
+                    background:#fef2f2;
+                    border:1px solid #fecaca;
+                    border-radius:8px;
+                    padding:.75rem 1rem;
+                    margin-bottom:1.5rem;
+                    font-size:.82rem;
+                    color:#991b1b;
+                    display:flex; align-items:flex-start; gap:.5rem;
+                "
+            >
+                <i class="bi bi-exclamation-triangle-fill" style="flex-shrink:0; margin-top:1px;"></i>
+                <span>
+                    Penghuni ini masih punya tagihan belum lunas
+                    <strong x-text="'Rp ' + Number(deletePopup.piutang).toLocaleString('id-ID')"></strong>.
+                    Status akun akan ditandai <strong>KABUR</strong> agar piutang tetap tercatat
+                    di riwayat & laporan keuangan.
+                </span>
             </div>
 
             {{-- Tombol --}}
@@ -88,7 +112,8 @@
                     onmouseover="this.style.background='#b91c1c'"
                     onmouseout="this.style.background='#dc2626'"
                 >
-                    <i class="bi bi-person-x me-1"></i>Ya, Nonaktifkan
+                    <i class="bi bi-person-x me-1"></i>
+                    <span x-text="deletePopup.piutang > 0 ? 'Ya, Tandai Kabur' : 'Ya, Nonaktifkan'"></span>
                 </button>
             </div>
         </div>
