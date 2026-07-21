@@ -107,21 +107,32 @@ class TagihanDanPembayaranSeeder extends Seeder
         string $email, int $bulanTunggak, int $sisaDariSekarang,
         Carbon $hariIni, Carbon $tanggalJatuhTempo, $faker
     ): string {
+        $status = '';
+
+        // 1. Tentukan status awal berdasarkan skenario
         if ($bulanTunggak > 0 && $sisaDariSekarang < $bulanTunggak) {
-            return $sisaDariSekarang === 0 ? 'belum_bayar' : 'terlambat';
+            $status = $sisaDariSekarang === 0 ? 'belum_bayar' : 'terlambat';
+        } elseif ($sisaDariSekarang === 0 && $email === 'penghuni1@firabo.test') {
+            $status = 'belum_bayar';
+        } elseif ($sisaDariSekarang === 0 && $email === 'penghuni2@firabo.test') {
+            $status = 'terlambat';
+        } elseif ($sisaDariSekarang === 0 && $email === 'penghuni3@firabo.test') {
+            $status = 'lunas';
+        } else {
+            // Fluktuasi realistis: mayoritas lunas, sedikit terlambat/belum_bayar
+            $status = $faker->randomElement(['lunas', 'lunas', 'lunas', 'lunas', 'lunas', 'terlambat', 'belum_bayar']);
         }
 
-        if ($sisaDariSekarang === 0) {
-            if ($email === 'penghuni1@firabo.test') return 'belum_bayar';
-            if ($email === 'penghuni2@firabo.test') return 'terlambat';
-            if ($email === 'penghuni3@firabo.test') return 'lunas';
-        }
-
-        // Fluktuasi realistis: mayoritas lunas, sedikit terlambat/belum_bayar
-        $status = $faker->randomElement(['lunas', 'lunas', 'lunas', 'lunas', 'lunas', 'terlambat', 'belum_bayar']);
-
-        if ($sisaDariSekarang === 0 && $status === 'terlambat' && $hariIni->lte($tanggalJatuhTempo)) {
-            $status = 'belum_bayar'; // belum lewat jatuh tempo, tidak boleh "terlambat"
+        // 2. VALIDASI MUTLAK TERHADAP TANGGAL JATUH TEMPO
+        if ($status !== 'lunas') {
+            if ($hariIni->gt($tanggalJatuhTempo)) {
+                // Jika hari ini SUDAH MELEWATI jatuh tempo, status wajib 'terlambat'
+                $status = 'terlambat';
+            } else {
+                // Jika hari ini BELUM MELEWATI (atau pas) jatuh tempo, status wajib 'belum_bayar'
+                // Karena secara realita tidak mungkin ada orang 'terlambat' sebelum waktunya
+                $status = 'belum_bayar';
+            }
         }
 
         return $status;

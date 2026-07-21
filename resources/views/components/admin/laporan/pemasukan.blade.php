@@ -12,10 +12,34 @@ new class extends Component {
     public string $filterBulan = '';
     public string $filterTahun = '';
 
+    public array $listTahun = [];
+
     public function mount(): void
     {
         $this->filterBulan = now()->format('m');
         $this->filterTahun = now()->format('Y');
+
+        // 1. Ambil tahun unik dari data pembayaran yang sukses
+        $tahunDb = Pembayaran::where('status_pembayaran', 'sukses')
+            ->selectRaw('YEAR(tanggal_bayar) as tahun')
+            ->distinct()
+            ->orderByDesc('tahun')
+            ->pluck('tahun')
+            ->toArray();
+
+        $tahunSekarang = (int) now()->format('Y');
+
+        if (empty($tahunDb)) {
+            // 2. Jika tidak ada data sama sekali, tampilkan tahun ini dan 2 tahun ke belakang
+            $this->listTahun = [$tahunSekarang, $tahunSekarang - 1, $tahunSekarang - 2];
+        } else {
+            // Pastikan tahun berjalan (saat ini) selalu ada di daftar meskipun belum ada transaksi
+            if (!in_array($tahunSekarang, $tahunDb)) {
+                $tahunDb[] = $tahunSekarang;
+                rsort($tahunDb); // Urutkan kembali dari tahun terbaru (descending)
+            }
+            $this->listTahun = $tahunDb;
+        }
     }
 
     public function updatedMode(): void       { $this->resetPage(); }
@@ -145,10 +169,9 @@ new class extends Component {
             @endif
 
             <select wire:model.live="filterTahun" class="firabo-input" style="width:auto; height:38px; padding:0 .875rem;">
-                @php $tahunSekarang = (int) date('Y'); @endphp
-                @for($t = $tahunSekarang; $t >= $tahunSekarang - 4; $t--)
-                    <option value="{{ $t }}">{{ $t }}</option>
-                @endfor
+                @foreach($listTahun as $tahun)
+                    <option value="{{ $tahun }}">{{ $tahun }}</option>
+                @endforeach
             </select>
         </div>
 

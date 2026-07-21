@@ -18,6 +18,7 @@ class ForceGenerateTagihan extends Command
     protected $signature = 'tagihan:test 
                             {hunian_id : ID dari hunian yang ingin dibuatkan tagihan}
                             {--nominal= : Override nominal tagihan (opsional)}
+                            {--tanggal= : Override tanggal tagihan (opsional, format: Y-m-d)}
                             {--jt=3 : Jarak hari jatuh tempo dari hari ini (default: 3)}';
 
     protected $description = 'Force create tagihan baru untuk keperluan testing (bypass semua validasi jadwal)';
@@ -52,8 +53,8 @@ class ForceGenerateTagihan extends Command
             : $hunian->kamar->harga_sewa;
 
         // 4. Tentukan tanggal
-        $tanggalHariIni = Carbon::today();
-        $tanggalJatuhTempo = Carbon::today()->addDays((int) $this->option('jt'));
+        $tanggalHariIni = $this->option('tanggal') ? Carbon::parse($this->option('tanggal')) : Carbon::today();
+        $tanggalJatuhTempo = $tanggalHariIni->addDays((int) $this->option('jt'));
 
         // 5. Force Create Tagihan
         try {
