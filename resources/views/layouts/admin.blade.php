@@ -61,6 +61,12 @@
                 <i class="bi bi-calendar-check"></i> Pengaturan Jadwal
             </a>
         </li>
+        <li class="nav-item">
+            <a href="{{ route('admin.laporan.index') }}"
+               class="nav-link {{ request()->routeIs('admin.laporan.*') ? 'active' : '' }}">
+                <i class="bi bi-bar-chart-line"></i> Laporan
+            </a>
+        </li>
     </ul>
 
     <div class="sidebar-bottom">
@@ -170,6 +176,10 @@
         <a href="{{ route('admin.jadwal.index') }}"
            class="bottom-nav-item {{ request()->routeIs('admin.jadwal.*') ? 'active' : '' }}">
             <i class="bi bi-calendar-check"></i><span>Jadwal</span>
+        </a>
+        <a href="{{ route('admin.laporan.index') }}"
+           class="bottom-nav-item {{ request()->routeIs('admin.laporan.*') ? 'active' : '' }}">
+            <i class="bi bi-bar-chart-line"></i><span>Laporan</span>
         </a>
     </nav>
 </div>

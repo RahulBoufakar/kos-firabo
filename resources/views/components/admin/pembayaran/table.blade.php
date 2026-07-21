@@ -88,7 +88,7 @@ new class extends Component {
 
         $pembayaran = Pembayaran::create([
             'tagihan_id'        => $this->tagihan_id,
-            'user_id'           => Auth::id(),
+            'user_id'           => Auth::id(), 
             'metode_pembayaran' => $this->metode_pembayaran,
             'nominal_bayar'     => $this->nominal_bayar,
             'tanggal_bayar'     => $this->tanggal_bayar,

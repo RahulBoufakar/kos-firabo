@@ -121,4 +121,41 @@ class User extends Authenticatable
     {
         return $this->role === 'penghuni';
     }
+
+    /**
+     * Hunian TERAKHIR milik user ini (aktif maupun sudah selesai) — dipakai untuk
+     * menampilkan kamar terakhir & tanggal keluar di Laporan Piutang Macet.
+     */
+    public function hunianTerakhir(): HasOne
+    {
+        return $this->hasOne(Hunian::class, 'user_id')
+            ->latest('tanggal_keluar');
+    }
+
+    /**
+     * Query tagihan tertunggak dari SELURUH riwayat hunian milik user ini.
+     * Basis untuk totalPiutang() dan jumlahTagihanTertunggak() di bawah.
+     */
+    private function tagihanTertunggakQuery()
+    {
+        return \App\Models\Tagihan::whereIn('hunian_id', $this->hunian()->pluck('hunian_id'))
+            ->piutang();
+    }
+
+    /**
+     * Total nominal piutang (tagihan belum lunas) — dipakai di Laporan Piutang Macet
+     * untuk penghuni berstatus 'kabur'.
+     */
+    public function totalPiutang(): float
+    {
+        return (float) $this->tagihanTertunggakQuery()->sum('nominal');
+    }
+
+    /**
+     * Jumlah tagihan yang masih tertunggak.
+     */
+    public function jumlahTagihanTertunggak(): int
+    {
+        return $this->tagihanTertunggakQuery()->count();
+    }
 }

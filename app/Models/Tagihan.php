@@ -66,4 +66,32 @@ class Tagihan extends Model
     {
         return Carbon::today()->diffInDays($this->tanggal_jatuh_tempo, false);
     }
+
+    /**
+     * Scope: hanya tagihan yang belum lunas (belum_bayar + terlambat).
+     * Dipakai di dashboard, mode "jatuh tempo terdekat", dan Laporan Tagihan Belum Dibayar.
+     */
+    public function scopeBelumLunas($query)
+    {
+        return $query->whereIn('status_tagihan', ['belum_bayar', 'terlambat']);
+    }
+
+    /**
+     * Scope: hanya tagihan yang hunian-nya terhubung ke penghuni berstatus AKTIF.
+     * Dipakai untuk memisahkan "tagihan yang masih realistis ditagih" dari piutang
+     * penghuni yang sudah kabur (itu masuk laporan Piutang Macet terpisah).
+     */
+    public function scopeMilikPenghuniAktif($query)
+    {
+        return $query->whereHas('hunian.user', fn($q) => $q->where('status_akun', 'aktif'));
+    }
+
+    /**
+     * Scope: tagihan yang statusnya sudah dikonversi jadi piutang macet
+     * (penghuninya kabur sebelum lunas). Terpisah dari belumLunas() secara sengaja.
+     */
+    public function scopePiutang($query)
+    {
+        return $query->where('status_tagihan', 'piutang');
+    }
 }

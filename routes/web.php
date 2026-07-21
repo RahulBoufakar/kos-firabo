@@ -45,6 +45,27 @@ Route::prefix('admin')
         Route::resource('jadwal', Admin\JadwalTagihanController::class)
             ->only(['index', 'edit', 'update']);
 
+        Route::prefix('laporan')
+            ->name('laporan.')
+            ->group(function () {
+                Route::get('/', [Admin\LaporanController::class, 'index'])
+                    ->name('index');
+                Route::get('/tagihan-belum-bayar', [Admin\LaporanController::class, 'tagihanBelumBayar'])
+                    ->name('tagihan-belum-bayar');
+                Route::get('/tagihan-belum-bayar/pdf', [Admin\LaporanController::class, 'tagihanBelumBayarPdf'])
+                    ->name('tagihan-belum-bayar.pdf');
+                Route::get('/tagihan-belum-bayar/pdf/unduh', [Admin\LaporanController::class, 'tagihanBelumBayarPdfUnduh'])
+                    ->name('tagihan-belum-bayar.pdf.unduh');
+                Route::get('/piutang', [Admin\LaporanController::class, 'piutang'])
+                    ->name('piutang');
+                Route::get('/piutang/pdf', [Admin\LaporanController::class, 'piutangPdf'])
+                    ->name('piutang.pdf');
+                Route::get('/pemasukan', [Admin\LaporanController::class, 'pemasukan'])
+                    ->name('pemasukan');
+                Route::get('/pemasukan/pdf', [Admin\LaporanController::class, 'pemasukanPdf'])
+                    ->name('pemasukan.pdf');
+            });
+
         Route::get('/profil', [Admin\ProfilController::class, 'edit'])
             ->name('profil.edit');
         Route::patch('/profil', [Admin\ProfilController::class, 'update'])
