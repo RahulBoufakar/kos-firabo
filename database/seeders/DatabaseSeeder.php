@@ -29,9 +29,9 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->command->info('');
-        $this->command->info('  Kos Firabo — Database Seeder');
-        $this->command->info('  ============================');
- 
+        $this->command->info('  Kos Firabo — Database Seeder (v6)');
+        $this->command->info('  ==================================');
+
         $this->call([
             AdminSeeder::class,
             KamarSeeder::class,
@@ -39,18 +39,20 @@ class DatabaseSeeder extends Seeder
             JadwalTagihanSeeder::class,
             TagihanDanPembayaranSeeder::class,
         ]);
- 
+
         $this->command->info('');
-        $this->command->info('  Selesai! Berhasil me-generate 30 Kamar dan 20 Penghuni Aktif beserta riwayatnya.');
+        $this->command->info('  Selesai! 24 Kamar Standar, 18 penghuni aktif, 2 penghuni kabur (piutang).');
         $this->command->info('');
-        
+
         $this->command->table(
             ['Role', 'Email', 'Password', 'Keterangan'],
             [
                 ['Admin',    'admin@firabo.test',     'admin123',    'Akses penuh panel admin'],
-                ['Penghuni', 'penghuni1@firabo.test', 'password123', 'Kamar A01 — ada tagihan belum bayar'],
-                ['Penghuni', 'penghuni2@firabo.test', 'password123', 'Kamar B01 — ada tagihan terlambat'],
-                ['Penghuni', 'penghuni3@firabo.test', 'password123', 'Kamar C01 — ada tagihan lunas'],
+                ['Penghuni', 'penghuni1@firabo.test', 'password123', 'Tagihan bulan ini: belum bayar'],
+                ['Penghuni', 'penghuni2@firabo.test', 'password123', 'Tagihan bulan ini: terlambat'],
+                ['Penghuni', 'penghuni3@firabo.test', 'password123', 'Tagihan bulan ini: lunas'],
+                ['(kabur)',  'kabur1@firabo.test',    'password123', 'Piutang Rp 1.800.000 — cek Laporan Piutang'],
+                ['(kabur)',  'kabur2@firabo.test',    'password123', 'Piutang Rp 1.200.000 — cek Laporan Piutang'],
             ]
         );
         $this->command->info('');

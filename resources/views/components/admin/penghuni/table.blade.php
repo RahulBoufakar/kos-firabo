@@ -3,6 +3,7 @@
 use App\Models\User;
 use App\Models\Kamar;
 use App\Models\Hunian;
+use App\Models\Tagihan;
 use App\Models\JadwalTagihan;
 use App\Events\PenghuniTerdaftar;
 use Livewire\Component;

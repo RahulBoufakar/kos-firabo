@@ -58,7 +58,7 @@ new class extends Component {
             )
             ->when(
                 $this->modeJatuhTempo,
-                fn($q) => $q->orderBy('tanggal_jatuh_tempo', 'asc'),
+                fn($q) => $q->orderBy('tanggal_jatuh_tempo', 'desc'),
                 fn($q) => $q->orderByDesc('tanggal_tagihan')
             )
             ->paginate(10);

@@ -10,66 +10,68 @@ use Illuminate\Support\Facades\Hash;
 use Carbon\Carbon;
 use Faker\Factory as Faker;
 
+/**
+ * PenghuniSeeder (v6)
+ *
+ * Membuat 20 penempatan (hunian selalu dibuat 'aktif' di sini):
+ *   - 3 akun testing (skenario belum_bayar/terlambat/lunas — tidak berubah)
+ *   - 15 penghuni acak
+ *   - 2 kandidat "kabur" (dikonversi ke piutang oleh TagihanDanPembayaranSeeder)
+ *
+ * 20 sekarang, 2 nanti dibebaskan lagi → hasil akhir 18 penghuni aktif,
+ * persis sesuai spesifikasi.
+ *
+ * no_wa wajib terisi — pakai nomor dummy dari Faker, bukan kosong/null.
+ */
 class PenghuniSeeder extends Seeder
 {
     public function run(): void
     {
         $faker = Faker::create('id_ID');
-        $this->command->info('  -> Memulai generate 20 Penghuni & Hunian...');
+        $this->command->info('  -> Membuat 20 penempatan penghuni (18 aktif + 2 kandidat kabur)...');
 
-        // 1. Definisikan akun testing untuk tiap tipe kamar
-        $akunTesting = [
-            'Standar'   => 'penghuni1@firabo.test',
-            'Eksklusif' => 'penghuni2@firabo.test',
-            'VIP'       => 'penghuni3@firabo.test'
-        ];
-
-        $jumlahTerisi = 0;
-
-        // 2. Buat penghuni testing
-        foreach ($akunTesting as $tipe => $email) {
-            // Cari kamar pertama yang tersedia sesuai tipe
-            $kamar = Kamar::where('tipe_kamar', $tipe)->where('status_kamar', 'tersedia')->first();
-            
-            if ($kamar) {
-                $this->buatDataPenghuni($kamar, $email, $faker->name, $faker);
-                $jumlahTerisi++;
-                $this->command->info("     [+] Testing Akun: {$email} menempati Kamar {$kamar->nomor_kamar} ({$tipe})");
-            }
+        foreach (['penghuni1@firabo.test', 'penghuni2@firabo.test', 'penghuni3@firabo.test'] as $email) {
+            $kamar = Kamar::where('status_kamar', 'tersedia')->inRandomOrder()->first();
+            if ($kamar) $this->buatDataPenghuni($kamar, $email, $faker->name, $faker);
         }
 
-        // 3. Buat penghuni random untuk sisa kuota (hingga total 20 kamar terisi)
-        $sisaKuota = 20 - $jumlahTerisi;
-        $sisaKamar = Kamar::where('status_kamar', 'tersedia')->limit($sisaKuota)->get();
-
-        foreach ($sisaKamar as $kamar) {
+        for ($i = 0; $i < 15; $i++) {
+            $kamar = Kamar::where('status_kamar', 'tersedia')->inRandomOrder()->first();
+            if (! $kamar) break;
             $this->buatDataPenghuni($kamar, $faker->unique()->safeEmail, $faker->name, $faker);
+        }
+
+        // Kandidat kabur — masuk lebih lama (4-5 bulan) agar histori tagihannya
+        // cukup panjang untuk membangun nominal piutang yang jelas.
+        foreach (['kabur1@firabo.test' => 5, 'kabur2@firabo.test' => 4] as $email => $bulanMundur) {
+            $kamar = Kamar::where('status_kamar', 'tersedia')->inRandomOrder()->first();
+            if ($kamar) $this->buatDataPenghuni($kamar, $email, $faker->name, $faker, $bulanMundur);
         }
 
         $this->command->info('  ✓ Sukses membuat data penghuni & hunian.');
     }
 
-    // Private helper agar kode tidak berulang
-    private function buatDataPenghuni($kamar, $email, $nama, $faker)
+    private function buatDataPenghuni($kamar, $email, $nama, $faker, ?int $bulanMundur = null)
     {
-        // Update status kamar
         $kamar->update(['status_kamar' => 'terisi']);
 
-        // Buat User
         $user = User::create([
-            'name'     => $nama,
-            'email'    => $email,
-            'password' => Hash::make('password123'),
+            'name'        => $nama,
+            'email'       => $email,
+            'no_wa'       => '08' . $faker->numerify('##########'),
+            'password'    => Hash::make('password123'),
+            'role'        => 'penghuni',
+            'status_akun' => 'aktif',
         ]);
 
-        // Buat Hunian
-        $tglMasukObj = $faker->dateTimeBetween('-5 months', '-1 month');
-        $carbonMasuk = Carbon::instance($tglMasukObj);
+        $tglMasukObj = $bulanMundur
+            ? $faker->dateTimeBetween("-{$bulanMundur} months", '-3 months')
+            : $faker->dateTimeBetween('-6 months', '-1 month');
 
         Hunian::create([
             'user_id'        => $user->id,
-            'kamar_id'       => $kamar->kamar_id, 
-            'tanggal_masuk'  => $carbonMasuk->format('Y-m-d'),
+            'kamar_id'       => $kamar->kamar_id,
+            'tanggal_masuk'  => Carbon::instance($tglMasukObj)->format('Y-m-d'),
             'tanggal_keluar' => null,
             'status_hunian'  => 'aktif',
         ]);
