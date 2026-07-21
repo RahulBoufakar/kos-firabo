@@ -54,7 +54,7 @@
         <div class="firabo-card">
             <div class="d-flex align-items-center justify-content-between mb-3">
                 <h6 class="card-title mb-0">Tagihan Jatuh Tempo Terdekat</h6>
-                <a href="{{ route('admin.tagihan.index') }}"
+                <a href="{{ route('admin.tagihan.index', ['view' => 'jatuh_tempo']) }}"
                    style="font-size:13px; color:var(--firabo-primary); text-decoration:none">
                     Lihat Semua
                 </a>
