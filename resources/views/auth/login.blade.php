@@ -55,13 +55,13 @@
         </button>
 
         <hr class="my-3">
-        <p class="text-center mb-0" style="font-size:13px; color:#6b7280">
+        {{-- <p class="text-center mb-0" style="font-size:13px; color:#6b7280">
             Belum punya akun?
             <a href="{{ route('register') }}"
                style="color:var(--firabo-primary); font-weight:500; text-decoration:none">
                 Daftar di sini
             </a>
-        </p>
+        </p> --}}
     </form>
 
     {{-- Link Hubungi Kami --}}
