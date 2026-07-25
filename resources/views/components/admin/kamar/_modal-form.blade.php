@@ -92,11 +92,34 @@
             @if ($isEditing)
                 <div class="col-md-6">
                     <label class="form-label-firabo">Status Kamar</label>
-                    <select class="firabo-input" wire:model.live="status_kamar">
-                        <option value="tersedia">Tersedia</option>
-                        <option value="terisi">Terisi</option>
-                        <option value="nonaktif">Nonaktif</option>
-                    </select>
+            
+                    @if ($kamarSedangDihuni)
+                        {{-- Kamar sedang dihuni: dropdown dikunci total, hanya
+                            menampilkan "Terisi" sebagai informasi. Tidak wire:model —
+                            nilai $status_kamar sudah 'terisi' dari openEdit() dan
+                            memang tidak boleh diubah lewat form ini. --}}
+                        <select class="firabo-input" disabled
+                                style="background:#f3f4f6; color:#6b7280; cursor:not-allowed;">
+                            <option selected>Terisi</option>
+                        </select>
+                        <div style="font-size:.78rem; color:#94a3b8; margin-top:4px;">
+                            <i class="bi bi-lock-fill me-1"></i>
+                            Tidak dapat diubah — kamar masih memiliki penghuni aktif.
+                            Nonaktifkan penghuninya lebih dulu lewat menu Penghuni.
+                        </div>
+                    @else
+                        {{-- Kamar tidak sedang dihuni: dropdown aktif, tapi opsi
+                            "Terisi" TIDAK ditampilkan sama sekali — status itu hanya
+                            boleh terbentuk otomatis saat ada penghuni menempati kamar. --}}
+                        <select class="firabo-input" wire:model.live="status_kamar">
+                            <option value="tersedia">Tersedia</option>
+                            <option value="nonaktif">Nonaktif</option>
+                        </select>
+                        <div style="font-size:.78rem; color:#94a3b8; margin-top:4px;">
+                            Status "Terisi" hanya terbentuk otomatis saat ada penghuni
+                            yang menempati kamar ini.
+                        </div>
+                    @endif
                 </div>
             @endif
 

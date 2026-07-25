@@ -4,6 +4,7 @@ namespace App\Mail;
 
 use App\Models\Pembayaran;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
@@ -20,7 +21,7 @@ use Illuminate\Queue\SerializesModels;
  * Untuk pembayaran manual oleh admin, email ini berfungsi sebagai bukti
  * dan transparansi — penghuni tahu ada pencatatan di sistem atas nama mereka.
  */
-class NotifikasiPembayaranBerhasil extends Mailable
+class NotifikasiPembayaranBerhasil extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 

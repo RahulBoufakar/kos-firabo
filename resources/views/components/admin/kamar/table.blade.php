@@ -3,21 +3,17 @@
 use App\Models\Kamar;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule;
 
 new class extends Component {
     use WithPagination;
 
-    // ── View State ─────────────────────────────────────────────────────────
-    // 'table'   → tampilan tabel normal
-    // 'skeleton'→ animasi transisi 700ms sebelum form muncul
-    // 'form'    → form tambah/edit
     public string $activeView = 'table';
 
-    // ── Filter ─────────────────────────────────────────────────────────────
     public string $search       = '';
     public string $filterStatus = '';
 
-    // ── Form Fields ────────────────────────────────────────────────────────
     public bool   $isEditing    = false;
     public ?int   $editingId    = null;
     public string $nomor_kamar  = '';
@@ -26,36 +22,43 @@ new class extends Component {
     public string $fasilitas    = '';
     public string $status_kamar = 'tersedia';
 
+    public bool $kamarSedangDihuni = false;
+
     public function updatingSearch(): void       { $this->resetPage(); }
     public function updatingFilterStatus(): void { $this->resetPage(); }
 
     public function openCreate(): void
     {
+        Gate::authorize('create', Kamar::class);
+
         $this->reset(['nomor_kamar', 'tipe_kamar', 'harga_sewa', 'fasilitas', 'editingId']);
-        $this->status_kamar = 'tersedia';
-        $this->isEditing    = false;
+        $this->status_kamar      = 'tersedia';
+        $this->kamarSedangDihuni = false;
+        $this->isEditing         = false;
         $this->resetValidation();
-        $this->activeView   = 'skeleton';
+        $this->activeView        = 'skeleton';
     }
 
     public function openEdit(int $id): void
     {
         $kamar = Kamar::findOrFail($id);
+        Gate::authorize('update', $kamar);
 
-        $this->editingId    = $kamar->kamar_id;
-        $this->nomor_kamar  = $kamar->nomor_kamar;
-        $this->tipe_kamar   = $kamar->tipe_kamar;
-        $this->harga_sewa   = (string) $kamar->harga_sewa;
-        $this->fasilitas    = $kamar->fasilitas ?? '';
-        $this->status_kamar = $kamar->status_kamar;
-        $this->isEditing    = true;
+        $this->editingId         = $kamar->kamar_id;
+        $this->nomor_kamar       = $kamar->nomor_kamar;
+        $this->tipe_kamar        = $kamar->tipe_kamar;
+        $this->harga_sewa        = (string) $kamar->harga_sewa;
+        $this->fasilitas         = $kamar->fasilitas ?? '';
+        $this->status_kamar      = $kamar->status_kamar;
+        $this->kamarSedangDihuni = $kamar->hunianAktif()->exists();
+        $this->isEditing         = true;
         $this->resetValidation();
-        $this->activeView   = 'skeleton';
+        $this->activeView        = 'skeleton';
     }
 
     public function cancelForm(): void
     {
-        $this->reset(['nomor_kamar', 'tipe_kamar', 'harga_sewa', 'fasilitas', 'editingId', 'isEditing']);
+        $this->reset(['nomor_kamar', 'tipe_kamar', 'harga_sewa', 'fasilitas', 'editingId', 'isEditing', 'kamarSedangDihuni']);
         $this->status_kamar = 'tersedia';
         $this->resetValidation();
         $this->activeView   = 'table';
@@ -63,40 +66,49 @@ new class extends Component {
 
     public function save(): void
     {
+        $kamar = $this->isEditing ? Kamar::findOrFail($this->editingId) : null;
+
+        if ($this->isEditing) {
+            Gate::authorize('update', $kamar);
+        } else {
+            Gate::authorize('create', Kamar::class);
+        }
+
+        $sedangDihuniSekarang = $kamar?->hunianAktif()->exists() ?? false;
+        $statusDiizinkan      = $sedangDihuniSekarang ? ['terisi'] : ['tersedia', 'nonaktif'];
+
         $this->validate([
             'nomor_kamar'  => 'required|string|max:10|unique:tb_kamar,nomor_kamar,'
                               . ($this->editingId ?? 'NULL') . ',kamar_id',
             'tipe_kamar'   => 'required|string|max:50',
             'harga_sewa'   => 'required|numeric|min:0',
             'fasilitas'    => 'nullable|string',
-            'status_kamar' => 'required|in:tersedia,terisi,nonaktif',
+            'status_kamar' => ['required', Rule::in($statusDiizinkan)],
         ], [
-            // Validasi Nomor Kamar
             'nomor_kamar.required' => 'Nomor kamar wajib diisi.',
             'nomor_kamar.string'   => 'Format nomor kamar tidak valid.',
             'nomor_kamar.max'      => 'Nomor kamar maksimal terdiri dari 10 karakter.',
             'nomor_kamar.unique'   => 'Nomor kamar sudah digunakan. Silakan gunakan nomor lain.',
-
-            // Validasi Tipe Kamar
             'tipe_kamar.required'  => 'Tipe kamar wajib diisi.',
             'tipe_kamar.string'    => 'Format tipe kamar tidak valid.',
             'tipe_kamar.max'       => 'Tipe kamar maksimal terdiri dari 50 karakter.',
-
-            // Validasi Harga Sewa
             'harga_sewa.required'  => 'Harga sewa wajib diisi.',
             'harga_sewa.numeric'   => 'Harga sewa harus berupa angka.',
             'harga_sewa.min'       => 'Harga sewa tidak boleh kurang dari 0.',
-
-            // Validasi Fasilitas (Opsional)
             'fasilitas.string'     => 'Format teks fasilitas tidak valid.',
-
-            // Validasi Status Kamar
             'status_kamar.required'=> 'Status kamar wajib dipilih.',
-            'status_kamar.in'      => 'Pilihan status kamar tidak valid.',
+            'status_kamar.in'      => $sedangDihuniSekarang
+                ? 'Status tidak dapat diubah karena kamar masih memiliki penghuni aktif.'
+                : 'Status "Terisi" tidak dapat dipilih secara manual — status ini hanya terbentuk otomatis saat ada penghuni yang menempati kamar.',
         ]);
 
+        if (! in_array($this->status_kamar, $statusDiizinkan, true)) {
+            $this->addError('status_kamar', 'Perubahan status ditolak — kondisi kamar sudah berubah, silakan muat ulang.');
+            return;
+        }
+
         if ($this->isEditing) {
-            Kamar::findOrFail($this->editingId)->update([
+            $kamar->update([
                 'nomor_kamar'  => $this->nomor_kamar,
                 'tipe_kamar'   => $this->tipe_kamar,
                 'harga_sewa'   => $this->harga_sewa,
@@ -115,7 +127,7 @@ new class extends Component {
 
         $pesan = $this->isEditing ? 'Kamar berhasil diperbarui.' : 'Kamar baru berhasil ditambahkan.';
 
-        $this->reset(['nomor_kamar', 'tipe_kamar', 'harga_sewa', 'fasilitas', 'editingId', 'isEditing']);
+        $this->reset(['nomor_kamar', 'tipe_kamar', 'harga_sewa', 'fasilitas', 'editingId', 'isEditing', 'kamarSedangDihuni']);
         $this->status_kamar = 'tersedia';
         $this->activeView   = 'table';
         $this->resetPage();
@@ -126,7 +138,43 @@ new class extends Component {
     // Dipanggil HANYA setelah user konfirmasi di _modal-hapus
     public function delete(int $id): void
     {
-        Kamar::findOrFail($id)->delete();
+        $kamar = Kamar::findOrFail($id);
+        Gate::authorize('delete', $kamar);
+
+        // ── VALIDASI SERVER-SIDE ─────────────────────────────────────────
+        // Tombol hapus sudah di-disable di client saat status 'terisi', tapi
+        // wire:click bisa dipanggil manual lewat devtools. Cek ulang di sini
+        // dari RELASI database (bukan kolom status_kamar saja) — kalau masih
+        // ada penghuni aktif, TOLAK permintaan sepenuhnya dan kembalikan
+        // error. Menonaktifkan penghuni adalah tindakan administratif
+        // tersendiri dengan konsekuensi (piutang, jadwal tagihan) yang harus
+        // dilakukan secara sadar lewat menu Penghuni — bukan sebagai efek
+        // samping tak terduga dari tombol "Hapus Kamar".
+        if ($kamar->hunianAktif()->exists()) {
+            $this->dispatch(
+                'toast',
+                pesan: "Kamar {$kamar->nomor_kamar} tidak dapat dihapus karena masih memiliki penghuni aktif. Nonaktifkan penghuninya terlebih dahulu melalui menu Penghuni.",
+                tipe: 'gagal'
+            );
+            return;
+        }
+
+        // Kamar tidak sedang dihuni tapi PERNAH punya histori hunian —
+        // jangan hard delete, cukup nonaktifkan. Ini melindungi riwayat
+        // tagihan/pembayaran lama supaya tidak kehilangan induk data kamar.
+        if ($kamar->hunian()->exists()) {
+            $kamar->update(['status_kamar' => 'nonaktif']);
+            $this->resetPage();
+            $this->dispatch(
+                'toast',
+                pesan: "Kamar {$kamar->nomor_kamar} pernah memiliki riwayat penghuni sehingga tidak dihapus permanen — status diubah menjadi Nonaktif.",
+                tipe: 'sukses'
+            );
+            return;
+        }
+
+        // Kamar benar-benar bersih (tidak pernah dihuni sama sekali) -> aman dihapus permanen.
+        $kamar->delete();
         $this->resetPage();
         $this->dispatch('toast', pesan: 'Kamar berhasil dihapus.', tipe: 'sukses');
     }
@@ -134,6 +182,10 @@ new class extends Component {
     public function render()
     {
         $kamar = Kamar::query()
+            // withCount dipakai supaya modal delete bisa menampilkan pesan
+            // yang tepat (akan dinonaktifkan vs dihapus permanen) TANPA
+            // query tambahan per baris (hindari N+1 di blade loop).
+            ->withCount('hunian')
             ->when($this->search, fn($q) =>
                 $q->where('nomor_kamar', 'like', "%{$this->search}%")
                   ->orWhere('tipe_kamar', 'like', "%{$this->search}%")
@@ -159,7 +211,7 @@ new class extends Component {
 <div
     x-data="{
         showSkeleton: false,
-        deletePopup: { show: false, id: null, nama: '' },
+        deletePopup: { show: false, id: null, nama: '', punyaHistori: false },
         toast: { show: false, pesan: '', tipe: 'sukses' }, // tipe: 'sukses' | 'gagal'
 
         mulaiSkeleton() {
@@ -169,11 +221,11 @@ new class extends Component {
                 $wire.activeView = 'form';
             }, 700);
         },
-        bukaPopupHapus(id, nama) {
-            this.deletePopup = { show: true, id, nama };
+        bukaPopupHapus(id, nama, punyaHistori) {
+            this.deletePopup = { show: true, id, nama, punyaHistori };
         },
         tutupPopupHapus() {
-            this.deletePopup = { show: false, id: null, nama: '' };
+            this.deletePopup = { show: false, id: null, nama: '', punyaHistori: false };
         },
         konfirmasiHapus() {
             $wire.delete(this.deletePopup.id);
@@ -286,12 +338,17 @@ new class extends Component {
                                             <i class="bi bi-pencil"></i>
                                         </button>
                                         <button
-                                            @click="bukaPopupHapus({{ $item->kamar_id }}, '{{ addslashes('Kamar '.$item->nomor_kamar) }}')"
+                                            @click="bukaPopupHapus(
+                                                {{ $item->kamar_id }},
+                                                '{{ addslashes('Kamar '.$item->nomor_kamar) }}',
+                                                {{ $item->hunian_count > 0 ? 'true' : 'false' }}
+                                            )"
                                             class="btn btn-sm btn-outline-danger"
                                             {{ $item->status_kamar === 'terisi' ? 'disabled' : '' }}
                                             title="Hapus"
                                         >
                                             <i class="bi bi-trash"></i>
+                                        </button>
                                         </button>
                                     </td>
                                 </tr>
@@ -346,10 +403,14 @@ new class extends Component {
                                         class="btn btn-sm btn-outline-secondary"
                                     ><i class="bi bi-pencil"></i></button>
                                     <button
-                                        @click="bukaPopupHapus({{ $item->kamar_id }}, '{{ addslashes('Kamar '.$item->nomor_kamar) }}')"
+                                        @click="bukaPopupHapus(
+                                            {{ $item->kamar_id }},
+                                            '{{ addslashes('Kamar '.$item->nomor_kamar) }}',
+                                            {{ $item->hunian_count > 0 ? 'true' : 'false' }}
+                                        )"
                                         class="btn btn-sm btn-outline-danger"
                                         {{ $item->status_kamar === 'terisi' ? 'disabled' : '' }}
-                                    ><i class="bi bi-trash"></i></button>
+                                        ><i class="bi bi-trash"></i></button>
                                 </div>
                             </div>
                             <div class="item-card-body">

@@ -41,4 +41,27 @@ class Kamar extends Model
     {
         return $this->status_kamar === 'tersedia';
     }
+
+    /**
+     * Sumber kebenaran tunggal: kamar ini sedang dihuni penghuni aktif?
+     * Dicek dari RELASI, bukan cuma kolom status_kamar — supaya anti-anomali
+     * kalau status_kamar dan data hunian pernah tidak sinkron.
+     */
+    public function sedangDihuni(): bool
+    {
+        return $this->status_kamar === 'terisi'
+            || $this->hunianAktif()->exists();
+    }
+
+    /**
+     * Boleh dihapus permanen? Kamar hanya boleh dihapus kalau tidak sedang
+     * dihuni DAN tidak punya histori hunian sama sekali (kamar baru, salah
+     * input). Kalau sudah pernah dihuni tapi sekarang kosong, sebaiknya
+     * dinonaktifkan (status 'nonaktif'), bukan dihapus — supaya histori
+     * tagihan/pembayaran lama tidak kehilangan induk data kamarnya.
+     */
+    public function bolehDihapusPermanen(): bool
+    {
+        return ! $this->sedangDihuni() && ! $this->hunian()->exists();
+    }
 }

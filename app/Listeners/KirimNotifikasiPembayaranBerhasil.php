@@ -36,7 +36,7 @@ class KirimNotifikasiPembayaranBerhasil
         }
 
         try {
-            Mail::send(new NotifikasiPembayaranBerhasil($pembayaran));
+            Mail::to($penghuni->email)->queue(new NotifikasiPembayaranBerhasil($pembayaran));
 
             Log::info('[Email] Konfirmasi pembayaran terkirim', [
                 'pembayaran_id' => $pembayaran->pembayaran_id,
