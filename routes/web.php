@@ -78,30 +78,35 @@ Route::prefix('penghuni')
     ->middleware(['auth', 'role:penghuni'])
     ->group(function () {
 
-        Route::get('/dashboard', [Penghuni\DashboardController::class, 'index'])
-            ->name('dashboard');
+        // Halaman kunci — di luar gate status, karena inilah tujuan redirect-nya.
+        Route::view('/akun-nonaktif', 'penghuni.akun-nonaktif')
+            ->name('akun-nonaktif');
 
-        Route::get('/tagihan', [Penghuni\TagihanController::class, 'index'])
-            ->name('tagihan.index');
-        Route::get('/tagihan/{tagihan}', [Penghuni\TagihanController::class, 'show'])
-            ->name('tagihan.show');
+        // Semua halaman lain dikunci kalau status bukan aktif.
+        Route::middleware('penghuni.status')->group(function () {
+            Route::get('/dashboard', [Penghuni\DashboardController::class, 'index'])
+                ->name('dashboard');
 
-        Route::get('/pembayaran', [Penghuni\PembayaranController::class, 'index'])
-            ->name('pembayaran.index');
+            Route::get('/tagihan', [Penghuni\TagihanController::class, 'index'])
+                ->name('tagihan.index');
+            Route::get('/tagihan/{tagihan}', [Penghuni\TagihanController::class, 'show'])
+                ->name('tagihan.show');
 
-        // Midtrans callback
-        Route::post('/pembayaran/callback', [Penghuni\PembayaranController::class, 'callback'])
-            ->name('pembayaran.callback')
-            ->withoutMiddleware(['auth', 'role:penghuni']);
+            Route::get('/pembayaran', [Penghuni\PembayaranController::class, 'index'])
+                ->name('pembayaran.index');
 
-        // Invalidasi snap token expired — dipanggil via fetch() dari Snap.js onError
-        Route::post('/pembayaran/{tagihan}/invalidate-token', [
-                Penghuni\PembayaranController::class,
-                'invalidateToken',])
-            ->name('pembayaran.invalidate-token');
+            Route::post('/pembayaran/callback', [Penghuni\PembayaranController::class, 'callback'])
+                ->name('pembayaran.callback')
+                ->withoutMiddleware(['auth', 'role:penghuni']);
 
-        Route::get('/profil', [Penghuni\ProfilController::class, 'edit'])
-            ->name('profil.edit');
-        Route::patch('/profil', [Penghuni\ProfilController::class, 'update'])
-            ->name('profil.update');
-    });
+            Route::post('/pembayaran/{tagihan}/invalidate-token', [
+                    Penghuni\PembayaranController::class,
+                    'invalidateToken',])
+                ->name('pembayaran.invalidate-token');
+
+            Route::get('/profil', [Penghuni\ProfilController::class, 'edit'])
+                ->name('profil.edit');
+            Route::patch('/profil', [Penghuni\ProfilController::class, 'update'])
+                ->name('profil.update');
+        });
+});

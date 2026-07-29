@@ -158,4 +158,12 @@ class User extends Authenticatable
     {
         return $this->tagihanTertunggakQuery()->count();
     }
+
+    /**
+     * Cek apakah akun user ini aktif.
+     */
+    public function isAktif(): bool
+    {
+        return $this->status_akun === 'aktif';
+    }
 }

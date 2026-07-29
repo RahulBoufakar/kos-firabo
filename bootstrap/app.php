@@ -13,6 +13,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'role' => \App\Http\Middleware\RoleMiddleware::class,
+            'penghuni.status' => \App\Http\Middleware\CekStatusAkunPenghuni::class,
         ]);
         // Exempt route callback Midtrans dari verifikasi CSRF token
         // karena webhook Midtrans tidak mengirim _token Laravel
