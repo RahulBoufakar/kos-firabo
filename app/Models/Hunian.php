@@ -85,4 +85,12 @@ class Hunian extends Model
 
         return $piutang;
     }
+
+    public function totalPiutang(): float
+    {
+        return (float) $this->tagihan()
+            ->where('status_tagihan', 'piutang')
+            ->sum('nominal');
+    }
 }
+

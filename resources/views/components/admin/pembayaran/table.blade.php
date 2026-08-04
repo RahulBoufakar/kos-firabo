@@ -96,11 +96,19 @@ new class extends Component {
         ]);
 
         if ($status === 'sukses') {
+            // 1. Ubah status tagihan yang baru dibayar menjadi 'lunas'
             $tagihan->update(['status_tagihan' => 'lunas']);
 
+            // 2. Cek sisa tagihan yang berstatus 'piutang' milik hunian tersebut
+            if ($tagihan->hunian) {
+                // Jika total tagihan berstatus 'piutang' sudah 0
+                if ($tagihan->hunian->totalPiutang() <= 0) {
+                    // Ubah status_akun penghuni (sesuaikan value 'nonaktif' atau status akhir yang diinginkan)
+                    $tagihan->hunian->user->update(['status_akun' => 'nonaktif']);
+                }
+            }
+
             // ── NEW: Fire event → listener kirim email konfirmasi ke penghuni ──
-            // Ini memberi transparansi: penghuni dapat notifikasi
-            // bahwa admin telah mencatat pembayaran atas nama mereka.
             $pembayaran->refresh();
             event(new PembayaranBerhasil($pembayaran));
         }
