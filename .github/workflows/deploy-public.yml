@@ -1,0 +1,29 @@
+name: Deploy Public
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy-public:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Deploy Public Folder
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          protocol: sftp
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+
+          local-dir: ./public/
+
+          server-dir: /public_html/
+
+          exclude: |
+            **/.DS_Store

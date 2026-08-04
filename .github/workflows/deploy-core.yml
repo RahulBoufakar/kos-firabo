@@ -1,0 +1,38 @@
+name: Deploy Laravel Core
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy-core:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Deploy Laravel Core
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          protocol: sftp
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+
+          server-dir: /laravel-core/
+
+          exclude: |
+            **/.git*
+            **/.github/**
+            **/.env
+            **/vendor/**
+            **/node_modules/**
+            **/storage/**
+            **/tests/**
+            **/public/**
+            **/README.md
+            **/.editorconfig
+            **/.gitattributes
+            **/.gitignore
