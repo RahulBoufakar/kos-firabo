@@ -90,8 +90,15 @@
             </div>
 
             {{-- FOOTER MODAL --}}
-            <div class="modal-footer border-top-0 pt-3 pb-4 justify-content-center px-4">
-                <button type="button" class="btn btn-secondary w-100 rounded-pill fw-medium py-2" data-bs-dismiss="modal">
+            <div class="modal-footer border-top-0 pt-3 pb-4 justify-content-center px-4 gap-2">
+                @if($status === 'sukses')
+                    <a href="{{ route('penghuni.pembayaran.download', $item->pembayaran_id) }}"
+                       class="btn btn-firabo rounded-pill fw-medium py-2 flex-fill text-center"
+                       target="_blank">
+                        <i class="bi bi-download me-1"></i> Download
+                    </a>
+                @endif
+                <button type="button" class="btn btn-secondary rounded-pill fw-medium py-2 flex-fill" data-bs-dismiss="modal">
                     Tutup
                 </button>
             </div>

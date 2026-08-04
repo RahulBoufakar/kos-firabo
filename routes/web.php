@@ -95,6 +95,9 @@ Route::prefix('penghuni')
             Route::get('/pembayaran', [Penghuni\PembayaranController::class, 'index'])
                 ->name('pembayaran.index');
 
+            Route::get('/pembayaran/{pembayaran}/download', [Penghuni\PembayaranController::class, 'downloadBukti'])
+                ->name('pembayaran.download');
+
             Route::post('/pembayaran/{tagihan}/invalidate-token', [
                     Penghuni\PembayaranController::class,
                     'invalidateToken',])

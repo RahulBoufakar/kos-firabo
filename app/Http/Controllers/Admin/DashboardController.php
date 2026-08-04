@@ -27,7 +27,7 @@ class DashboardController extends Controller
 
         $tagihanDekat = Tagihan::with(['hunian.user', 'hunian.kamar'])
             ->whereIn('status_tagihan', ['belum_bayar', 'terlambat'])
-            ->orderBy('tanggal_jatuh_tempo', 'asc')
+            ->orderBy('tanggal_jatuh_tempo', 'desc')
             ->limit(5)
             ->get();
 

@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Midtrans\Config;
 use Midtrans\Notification;
+use Illuminate\Support\Facades\Gate;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 /**
  * PembayaranController (Penghuni)
@@ -103,6 +105,27 @@ class PembayaranController extends Controller
         return response()->json(['message' => 'Token invalidated']);
     }
 
+    /**
+     * Download bukti pembayaran dalam bentuk PDF.
+     * Hanya bisa diakses untuk pembayaran milik penghuni yang login
+     * dan yang statusnya sudah sukses.
+     */
+    public function downloadBukti(Pembayaran $pembayaran): \Illuminate\Http\Response
+    {
+        Gate::authorize('view', $pembayaran);
+
+        if ($pembayaran->status_pembayaran !== 'sukses') {
+            abort(404);
+        }
+
+        $pembayaran->load(['tagihan.hunian.user', 'tagihan.hunian.kamar']);
+
+        $pdf = Pdf::loadView('penghuni.pembayaran.pdf.bukti-pembayaran', [
+            'pembayaran' => $pembayaran,
+        ])->setPaper('a4', 'portrait');
+
+        return $pdf->download('bukti-pembayaran-' . $pembayaran->pembayaran_id . '.pdf');
+    }
 
     // =========================================================================
     //  CALLBACK — Webhook Midtrans
