@@ -25,6 +25,7 @@ jobs:
           timeout: 60000
           exclude: |
             **/.git*
+            **/.git*/**
             **/.github/**
             **/.env
             **/vendor/**
@@ -50,16 +51,17 @@ jobs:
           server-dir: /public_html/
           timeout: 60000
           exclude: |
-              **/.git*
-              **/.git*/**
-              **/.github/**
-              **/.env
-              **/vendor/**
-              **/node_modules/**
-              **/storage/**
-              **/tests/**
-              **/public/**
-              **/README.md
-              **/.editorconfig
-              **/.gitattributes
-              **/.gitignore
+            **/.git*
+            **/.git*/**
+            **/.github/**
+            **/.env
+            **/vendor/**
+            **/node_modules/**
+            **/storage/**
+            **/tests/**
+            **/public/**
+            **/README.md
+            **/.editorconfig
+            **/.gitattributes
+            **/.gitignore
+            **/.DS_Store
