@@ -1,4 +1,4 @@
-name: Deploy Laravel Core
+name: Deploy Laravel
 
 on:
   push:
@@ -6,24 +6,23 @@ on:
       - main
 
 jobs:
-  deploy-core:
+  deploy:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
       - name: Deploy Laravel Core
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        env:
+          NODE_OPTIONS: --dns-result-order=ipv4first
         with:
           protocol: "ftp"
-
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-
           server-dir: /laravel-core/
-
+          timeout: 60000
           exclude: |
             **/.git*
             **/.github/**
@@ -37,3 +36,18 @@ jobs:
             **/.editorconfig
             **/.gitattributes
             **/.gitignore
+
+      - name: Deploy Public Folder
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        env:
+          NODE_OPTIONS: --dns-result-order=ipv4first
+        with:
+          protocol: "ftp"
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./public/
+          server-dir: /public_html/
+          timeout: 60000
+          exclude: |
+            **/.DS_Store
