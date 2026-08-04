@@ -50,7 +50,6 @@ jobs:
           server-dir: /public_html/
           timeout: 60000
           exclude: |
-            exclude: |
               **/.git*
               **/.git*/**
               **/.github/**
