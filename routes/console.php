@@ -36,7 +36,8 @@ Artisan::command('inspire', function () {
 //   - Jika tanggal_generate == hari ini → buat tagihan baru
 //   - Cek duplikasi sebelum insert (idempotent)
 Schedule::command('tagihan:generate')
-    ->dailyAt('00:05')
+    //->dailyAt('00:05')         // Jalankan tiap hari pukul 00:05
+    ->everyThirtySeconds()          // Untuk testing, jalankan tiap menit
     ->withoutOverlapping()   // Cegah dua instance berjalan bersamaan
     ->runInBackground()      // Tidak memblokir scheduler untuk job lain
     ->appendOutputTo(storage_path('logs/tagihan-generate.log')); //hasil log untuk debugging

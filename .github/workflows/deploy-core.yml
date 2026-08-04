@@ -16,7 +16,7 @@ jobs:
       - name: Deploy Laravel Core
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
-          protocol: "sftp"
+          protocol: "ftp"
 
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
