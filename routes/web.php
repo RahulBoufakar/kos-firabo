@@ -95,10 +95,6 @@ Route::prefix('penghuni')
             Route::get('/pembayaran', [Penghuni\PembayaranController::class, 'index'])
                 ->name('pembayaran.index');
 
-            Route::post('/pembayaran/callback', [Penghuni\PembayaranController::class, 'callback'])
-                ->name('pembayaran.callback')
-                ->withoutMiddleware(['auth', 'role:penghuni']);
-
             Route::post('/pembayaran/{tagihan}/invalidate-token', [
                     Penghuni\PembayaranController::class,
                     'invalidateToken',])
