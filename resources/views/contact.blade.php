@@ -226,7 +226,7 @@
                 <i class="bi bi-telephone"></i>
             </div>
             <h2 class="contact-card__title">Phone Number</h2>
-            <p class="contact-card__value">{{\App\Models\user::where('role', 'admin')->first()->no_wa}}</p>
+            <p class="contact-card__value">{{\App\Models\User::where('role', 'admin')->first()->no_wa}}</p>
             <a href="tel:+6281234567890" class="contact-card__btn">
                 <i class="bi bi-telephone"></i>
                 Call Now
@@ -239,7 +239,7 @@
                 <i class="bi bi-chat-dots"></i>
             </div>
             <h2 class="contact-card__title">WhatsApp</h2>
-            <p class="contact-card__value">{{\App\Models\user::where('role', 'admin')->first()->no_wa}}</p>
+            <p class="contact-card__value">{{\App\Models\User::where('role', 'admin')->first()->no_wa}}</p>
             <a href="https://wa.me/6281234567890?text=Halo%20Kos%20Firabo%2C%20saya%20ingin%20bertanya."
                target="_blank"
                rel="noopener noreferrer"
@@ -255,7 +255,7 @@
                 <i class="bi bi-envelope"></i>
             </div>
             <h2 class="contact-card__title">Email</h2>
-            <p class="contact-card__value">{{\App\Models\user::where('role', 'admin')->first()->email}}</p>
+            <p class="contact-card__value">{{\App\Models\User::where('role', 'admin')->first()->email}}</p>
             <a href="mailto:bantuan@kosfirabo.com" class="contact-card__btn">
                 <i class="bi bi-send"></i>
                 Send Email
