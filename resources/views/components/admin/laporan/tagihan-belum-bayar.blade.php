@@ -45,7 +45,7 @@ new class extends Component {
         $tagihan = $this->baseQuery()
             ->when($this->filterStatus, fn($q) => $q->where('status_tagihan', $this->filterStatus))
             ->with(['hunian.user', 'hunian.kamar'])
-            ->orderBy('tanggal_jatuh_tempo', 'asc')
+            ->orderBy('tanggal_jatuh_tempo', 'desc')
             ->paginate(10);
 
         return view('components.admin.laporan.tagihan-belum-bayar', compact('tagihan', 'ringkasan'));

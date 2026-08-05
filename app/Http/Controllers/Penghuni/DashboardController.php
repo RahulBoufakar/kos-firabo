@@ -21,7 +21,7 @@ class DashboardController extends Controller
         if ($hunian) {
             $tagihanAktif = Tagihan::where('hunian_id', $hunian->hunian_id)
                 ->whereIn('status_tagihan', ['belum_bayar', 'terlambat'])
-                ->orderBy('tanggal_jatuh_tempo', 'asc')
+                ->orderBy('tanggal_jatuh_tempo', 'desc')
                 ->first();
         }
 
