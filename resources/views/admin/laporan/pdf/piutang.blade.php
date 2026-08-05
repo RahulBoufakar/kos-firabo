@@ -27,7 +27,7 @@
     </div>
 
     <div class="meta">
-        Dicetak: {{ $tanggalCetak->translatedFormat('d F Y, H:i') }} WIB oleh {{ $dicetakOleh }}
+        Dicetak: {{ $tanggalCetak->translatedFormat('d F Y, H:i') }} WIT oleh {{ $dicetakOleh }}
     </div>
 
     <table class="summary">

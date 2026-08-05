@@ -29,7 +29,7 @@
     </div>
 
     <div class="meta">
-        Dicetak: {{ $tanggalCetak->translatedFormat('d F Y, H:i') }} WIB oleh {{ $dicetakOleh }}<br>
+        Dicetak: {{ $tanggalCetak->translatedFormat('d F Y, H:i') }} WIT oleh {{ $dicetakOleh }}<br>
         Filter status: {{ $filterStatus === 'belum_bayar' ? 'Belum Bayar' : ($filterStatus === 'terlambat' ? 'Terlambat' : 'Semua') }}
         &mdash; hanya penghuni aktif (tidak termasuk penghuni berstatus kabur)
     </div>
